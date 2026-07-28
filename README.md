@@ -104,7 +104,7 @@ When the session already exists:
 - Outside tmux, `wf` attaches to it.
 - Inside tmux, `wf` switches the current client to it.
 
-Session names may only contain letters, numbers, `.`, `_`, and `-`. Session names may not be `.` or `..`.
+Session names may only contain letters, numbers, `.`, `_`, and `-`. Session names must contain at least one letter or number and may not be `.` or `..`.
 
 ### Create a workspace from the current directory
 
