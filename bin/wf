@@ -1,0 +1,144 @@
+#!/usr/bin/env zsh
+
+# wf - Workspace Flow
+# A lightweight tmux workspace manager
+
+session_exists() {
+  tmux has-session -t "=$1" 2>/dev/null
+}
+
+list_sessions() {
+  if ! tmux list-sessions 2>/dev/null; then
+    echo "wf: no active sessions"
+  fi
+}
+
+switch_or_attach() {
+  local session_name="$1"
+
+  if [[ -n "$TMUX" ]]; then
+    tmux switch-client -t "=$session_name"
+  else
+    tmux attach-session -t "=$session_name"
+  fi
+}
+
+create_default_session() {
+  local session_name="$1"
+
+  tmux new-session -d -s "$session_name" &&
+    tmux new-window -t "=$session_name" &&
+    tmux new-window -t "=$session_name" &&
+    tmux new-window -t "=$session_name" &&
+    tmux select-window -t "=$session_name:1"
+}
+
+show_help() {
+  cat <<'EOF'
+Usage:
+  wf
+  wf <session_name>
+  wf -d <session_name>
+  wf -label <window_name>
+  wf --help
+
+Commands:
+  wf
+      List active tmux sessions.
+
+  wf <session_name>
+      Switch or attach to the session if it exists.
+      Otherwise, create it with four windows.
+
+  wf -d <session_name>
+      Prompt for confirmation, then delete the session.
+
+  wf -label <window_name>
+      Rename the current tmux window.
+      Only works from inside tmux.
+
+  wf --help
+      Display this help message.
+EOF
+}
+
+main() {
+  local command="$1"
+
+  case "$command" in
+    "")
+      list_sessions
+      ;;
+
+    --help|-h)
+      show_help
+      ;;
+
+    -label)
+      shift
+      local window_label="$*"
+
+      if [[ -z "$TMUX" ]]; then
+        echo "wf: -label must be run inside a tmux session" >&2
+        return 1
+      fi
+
+      if [[ -z "$window_label" ]]; then
+        echo "Usage: wf -label <window_name>" >&2
+        return 1
+      fi
+
+      tmux rename-window "$window_label"
+      ;;
+
+    -d)
+      local session_name="$2"
+
+      if (( $# != 2 )); then
+        echo "Usage: wf -d <session_name>" >&2
+        return 1
+      fi
+
+      if ! session_exists "$session_name"; then
+        echo "wf: session '$session_name' does not exist" >&2
+        return 1
+      fi
+
+      read -q "REPLY?wf: delete '$session_name'? [y/N] "
+      echo
+
+      if [[ "$REPLY" == [yY] ]]; then
+        tmux kill-session -t "=$session_name"
+        echo "wf: deleted session '$session_name'"
+      else
+        echo "wf: delete cancelled"
+      fi
+      ;;
+
+    -*)
+      echo "wf: unknown option '$command'" >&2
+      echo "wf: run 'wf --help' for usage" >&2
+      return 1
+      ;;
+
+    *)
+      if (( $# != 1 )); then
+        echo "Usage: wf <session_name>" >&2
+        return 1
+      fi
+
+      local session_name="$command"
+
+      if ! session_exists "$session_name"; then
+        if ! create_default_session "$session_name"; then
+          echo "wf: failed to create session '$session_name'" >&2
+          return 1
+        fi
+      fi
+
+      switch_or_attach "$session_name"
+      ;;
+  esac
+}
+
+main "$@"
