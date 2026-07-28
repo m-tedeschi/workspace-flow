@@ -33,6 +33,34 @@ create_default_session() {
     tmux select-window -t "=$session_name:1"
 }
 
+is_valid_derived_session_name() {
+  local session_name="$1"
+
+  [[ "$session_name" =~ '^[A-Za-z0-9._-]+$' ]]
+}
+
+create_session_from_current_directory() {
+  local session_name="${PWD:t}"
+
+  if ! is_valid_derived_session_name "$session_name"; then
+    echo "wf: invalid directory session name '$session_name'" >&2
+    echo "wf: directory session names may only contain letters, numbers, '.', '_', and '-'" >&2
+    return 1
+  fi
+
+  if session_exists "$session_name"; then
+    echo "wf: session already exists" >&2
+    return 1
+  fi
+
+  if ! create_default_session "$session_name"; then
+    echo "wf: failed to create session '$session_name'" >&2
+    return 1
+  fi
+
+  switch_or_attach "$session_name"
+}
+
 show_help() {
   cat <<'EOF'
 Usage:
@@ -49,6 +77,9 @@ Commands:
   wf <session_name>
       Switch or attach to the session if it exists.
       Otherwise, create it with four windows.
+
+  wf .
+      Create a session named after the current directory.
 
   wf -d <session_name>
       Prompt for confirmation, then delete the session.
@@ -125,6 +156,11 @@ main() {
       if (( $# != 1 )); then
         echo "Usage: wf <session_name>" >&2
         return 1
+      fi
+
+      if [[ "$command" == "." ]]; then
+        create_session_from_current_directory
+        return
       fi
 
       local session_name="$command"

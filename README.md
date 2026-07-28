@@ -15,6 +15,7 @@ wf myproject
 ## Features
 
 - Create tmux sessions with four windows
+- Create a session from the current directory name with `wf .`
 - Attach to existing sessions from outside tmux
 - Switch between sessions from inside tmux
 - List active sessions
@@ -103,6 +104,22 @@ When the session already exists:
 - Outside tmux, `wf` attaches to it.
 - Inside tmux, `wf` switches the current client to it.
 
+### Create a workspace from the current directory
+
+```sh
+wf .
+```
+
+When run from `~/dev/project`, `wf .` creates a session named `project` and enters it.
+
+If a session named `project` already exists, `wf` prints:
+
+```text
+wf: session already exists
+```
+
+Directory-derived session names may only contain letters, numbers, `.`, `_`, and `-`.
+
 ### Rename the current window
 
 ```sh
@@ -160,6 +177,9 @@ wf
 wf <session_name>
     Create the session if it does not exist.
     Otherwise, attach or switch to it.
+
+wf .
+    Create a session named after the current directory.
 
 wf -label <window_name>
     Rename the current tmux window.
