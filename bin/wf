@@ -33,6 +33,17 @@ create_default_session() {
     tmux select-window -t "=$session_name:1"
 }
 
+create_default_session_in_directory() {
+  local session_name="$1"
+  local directory="$2"
+
+  tmux new-session -d -s "$session_name" -c "$directory" &&
+    tmux new-window -t "=$session_name" -c "$directory" &&
+    tmux new-window -t "=$session_name" -c "$directory" &&
+    tmux new-window -t "=$session_name" -c "$directory" &&
+    tmux select-window -t "=$session_name:1"
+}
+
 is_valid_session_name() {
   local session_name="$1"
 
@@ -49,8 +60,8 @@ has_alphanumeric() {
   [[ "$session_name" =~ '[A-Za-z0-9]' ]]
 }
 
-session_name_from_current_directory() {
-  local directory_name="${PWD:t}"
+session_name_from_directory_name() {
+  local directory_name="$1"
   local session_name="${directory_name//[^A-Za-z0-9_-]/_}"
 
   if is_valid_session_name "$session_name"; then
@@ -59,6 +70,14 @@ session_name_from_current_directory() {
   fi
 
   return 1
+}
+
+session_name_from_current_directory() {
+  session_name_from_directory_name "${PWD:t}"
+}
+
+session_name_from_home_directory() {
+  session_name_from_directory_name "${HOME:t}"
 }
 
 print_invalid_session_name() {
@@ -88,6 +107,26 @@ create_session_from_current_directory() {
   if ! create_default_session "$session_name"; then
     echo "wf: failed to create session '$session_name'" >&2
     return 1
+  fi
+
+  switch_or_attach "$session_name"
+}
+
+create_or_enter_home_session() {
+  local directory_name="${HOME:t}"
+  local session_name
+
+  if ! session_name="$(session_name_from_home_directory)"; then
+    echo "wf: could not derive a safe session name from '$directory_name'" >&2
+    echo "wf: home directory name must contain at least one letter or number" >&2
+    return 1
+  fi
+
+  if ! session_exists "$session_name"; then
+    if ! create_default_session_in_directory "$session_name" "$HOME"; then
+      echo "wf: failed to create session '$session_name'" >&2
+      return 1
+    fi
   fi
 
   switch_or_attach "$session_name"
@@ -139,6 +178,7 @@ show_help() {
 Usage:
   wf
   wf <session_name>
+  wf ~
   wf -d
   wf -d <session_name>
   wf -x
@@ -155,6 +195,10 @@ Commands:
 
   wf .
       Create a session named after the current directory.
+
+  wf ~
+      Create a session named after the home directory.
+      New windows start in the home directory.
 
   wf -d
       Prompt for confirmation, then delete the current session.
@@ -254,6 +298,11 @@ main() {
 
       if [[ "$command" == "." ]]; then
         create_session_from_current_directory
+        return
+      fi
+
+      if [[ "$command" == "~" || "$command" == "$HOME" ]]; then
+        create_or_enter_home_session
         return
       fi
 

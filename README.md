@@ -17,6 +17,7 @@ wf myproject
 
 - Create tmux sessions with four windows
 - Create a session from the current directory name with `wf .`
+- Create a session from the home directory name with `wf ~`
 - Attach to existing sessions from outside tmux
 - Switch between sessions from inside tmux
 - Detach from the current tmux session
@@ -126,6 +127,16 @@ wf: session already exists
 
 The derived session name must contain at least one letter or number.
 
+### Create or enter your home workspace
+
+```sh
+wf ~
+```
+
+This creates or enters a session named after your home directory. For example, if your home directory is `/Users/miketedeschi`, the session is named `miketedeschi`.
+
+When the session does not exist, `wf` creates it with four windows that start in your home directory.
+
 ### Rename the current window
 
 ```sh
@@ -202,6 +213,10 @@ wf <session_name>
 
 wf .
     Create a session named after the current directory.
+
+wf ~
+    Create the home workspace if it does not exist.
+    Otherwise, attach or switch to it.
 
 wf -label <window_name>
     Rename the current tmux window.
