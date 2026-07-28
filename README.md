@@ -20,6 +20,7 @@ wf myproject
 - List active sessions
 - Rename the current tmux window
 - Delete sessions with confirmation
+- Tab-complete existing session names in Zsh
 
 ## Requirements
 
@@ -47,13 +48,15 @@ The installer copies `bin/wf` to:
 ~/.local/bin/wf
 ```
 
-Make sure `~/.local/bin` is included in your `PATH`:
+It also installs the Zsh completion file to:
 
-```sh
-export PATH="$HOME/.local/bin:$PATH"
+```text
+~/.local/share/zsh/site-functions/_wf
 ```
 
-Add that line to `~/.zshrc` if it is not already present, then reload your shell configuration:
+If needed, the installer also adds a managed setup block to `~/.zshrc` so `wf` is on your `PATH` and Zsh can find the completion file.
+
+Restart your shell, or reload your shell configuration:
 
 ```sh
 source ~/.zshrc
@@ -134,6 +137,8 @@ wf -d leetcode
 
 `wf` asks for confirmation before deleting the session.
 
+Session names can be tab-completed for both `wf <session_name>` and `wf -d <session_name>`.
+
 ### Show help
 
 ```sh
@@ -172,6 +177,8 @@ wf --help
 workspace-flow/
 ├── bin/
 │   └── wf
+├── completions/
+│   └── _wf
 ├── README.md
 └── install.sh
 ```
