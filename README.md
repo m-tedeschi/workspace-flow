@@ -3,6 +3,7 @@
 A lightweight tmux workspace manager.
 
 `wf` provides a small, intention-based interface for creating, entering, listing, labeling, and deleting tmux sessions.
+It can also detach from the current session when you are done working in it.
 
 Instead of remembering whether a session already exists, run:
 
@@ -18,6 +19,7 @@ wf myproject
 - Create a session from the current directory name with `wf .`
 - Attach to existing sessions from outside tmux
 - Switch between sessions from inside tmux
+- Detach from the current tmux session
 - List active sessions
 - Rename the current tmux window
 - Delete sessions with confirmation
@@ -144,6 +146,14 @@ wf -label Codex Work
 
 This command must be run from inside a tmux session.
 
+### Detach from the current session
+
+```sh
+wf -x
+```
+
+This command detaches the current tmux client. It must be run from inside a tmux session.
+
 ### Delete a session
 
 ```sh
@@ -201,6 +211,10 @@ wf -d <session_name>
 
 wf -d
     Prompt for confirmation and delete the current session.
+    Only works from inside tmux.
+
+wf -x
+    Detach from the current tmux session.
     Only works from inside tmux.
 
 wf --help

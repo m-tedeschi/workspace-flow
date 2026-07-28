@@ -15,5 +15,6 @@ _wf_sessions() {
 _arguments -C \
   '(-h --help)'{-h,--help}'[display help]' \
   '-d[delete a tmux session]:session:_wf_sessions' \
+  '-x[detach from the current tmux session]' \
   '-label[rename the current tmux window]:window name:' \
   '1:session:_wf_sessions'

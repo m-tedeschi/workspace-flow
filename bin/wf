@@ -125,6 +125,15 @@ delete_current_session() {
   delete_session "$session_name" "wf: delete current session '$session_name'? [y/N] "
 }
 
+detach_current_client() {
+  if [[ -z "$TMUX" ]]; then
+    echo "wf: -x must be run inside a tmux session" >&2
+    return 1
+  fi
+
+  tmux detach-client
+}
+
 show_help() {
   cat <<'EOF'
 Usage:
@@ -132,6 +141,7 @@ Usage:
   wf <session_name>
   wf -d
   wf -d <session_name>
+  wf -x
   wf -label <window_name>
   wf --help
 
@@ -152,6 +162,10 @@ Commands:
 
   wf -d <session_name>
       Prompt for confirmation, then delete the session.
+
+  wf -x
+      Detach from the current tmux session.
+      Only works from inside tmux.
 
   wf -label <window_name>
       Rename the current tmux window.
@@ -215,6 +229,15 @@ main() {
       fi
 
       delete_session "$session_name" "wf: delete '$session_name'? [y/N] "
+      ;;
+
+    -x)
+      if (( $# != 1 )); then
+        echo "Usage: wf -x" >&2
+        return 1
+      fi
+
+      detach_current_client
       ;;
 
     -*)
