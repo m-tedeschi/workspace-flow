@@ -1,2 +1,5 @@
 # macOS Artifact
 .DS_Store
+
+# Codex session store
+.codex.session
