@@ -1,0 +1,19 @@
+#compdef wf
+
+_wf_sessions() {
+  local -a sessions
+
+  sessions=("${(@f)$(tmux list-sessions -F '#S' 2>/dev/null)}")
+
+  if (( ${#sessions} )); then
+    _describe -t sessions 'tmux session' sessions
+  else
+    _message 'no active tmux sessions'
+  fi
+}
+
+_arguments -C \
+  '(-h --help)'{-h,--help}'[display help]' \
+  '-d[delete a tmux session]:session:_wf_sessions' \
+  '-label[rename the current tmux window]:window name:' \
+  '1:session:_wf_sessions'
