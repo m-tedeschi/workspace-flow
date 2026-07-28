@@ -39,7 +39,7 @@ is_valid_session_name() {
   [[ -n "$session_name" ]] &&
     [[ "$session_name" != "." ]] &&
     [[ "$session_name" != ".." ]] &&
-    [[ "$session_name" =~ '^[A-Za-z0-9._-]+$' ]] &&
+    [[ "$session_name" =~ '^[A-Za-z0-9_-]+$' ]] &&
     has_alphanumeric "$session_name"
 }
 
@@ -51,7 +51,7 @@ has_alphanumeric() {
 
 session_name_from_current_directory() {
   local directory_name="${PWD:t}"
-  local session_name="${directory_name//[^A-Za-z0-9._-]/_}"
+  local session_name="${directory_name//[^A-Za-z0-9_-]/_}"
 
   if is_valid_session_name "$session_name"; then
     echo "$session_name"
@@ -65,7 +65,7 @@ print_invalid_session_name() {
   local session_name="$1"
 
   echo "wf: invalid session name '$session_name'" >&2
-  echo "wf: session names may only contain letters, numbers, '.', '_', and '-'" >&2
+  echo "wf: session names may only contain letters, numbers, '_', and '-'" >&2
   echo "wf: session names must contain at least one letter or number" >&2
   echo "wf: session names may not be '.' or '..'" >&2
 }
