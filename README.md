@@ -114,13 +114,15 @@ wf .
 
 When run from `~/dev/project`, `wf .` creates a session named `project` and enters it.
 
+Directory names are converted to safe session names by replacing unsupported characters with `_`. For example, `big test` becomes `big_test`.
+
 If a session named `project` already exists, `wf` prints:
 
 ```text
 wf: session already exists
 ```
 
-Directory-derived session names follow the same session name rules.
+The derived session name must contain at least one letter or number.
 
 ### Rename the current window
 
