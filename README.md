@@ -158,6 +158,14 @@ wf -d leetcode
 
 `wf` asks for confirmation before deleting the session.
 
+When run from inside tmux, `wf -d` without a session name deletes the current session after confirmation:
+
+```sh
+wf -d
+```
+
+Outside tmux, use `wf -d <session_name>`.
+
 Session names can be tab-completed for both `wf <session_name>` and `wf -d <session_name>`.
 
 ### Show help
@@ -190,6 +198,10 @@ wf -label <window_name>
 
 wf -d <session_name>
     Prompt for confirmation and delete the session.
+
+wf -d
+    Prompt for confirmation and delete the current session.
+    Only works from inside tmux.
 
 wf --help
     Display the help message.

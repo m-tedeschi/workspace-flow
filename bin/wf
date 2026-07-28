@@ -93,11 +93,44 @@ create_session_from_current_directory() {
   switch_or_attach "$session_name"
 }
 
+delete_session() {
+  local session_name="$1"
+  local prompt="$2"
+
+  printf "%s" "$prompt"
+  read -r -k 1 REPLY
+  echo
+
+  if [[ "$REPLY" == [yY] ]]; then
+    tmux kill-session -t "=$session_name"
+    echo "wf: deleted session '$session_name'"
+  else
+    echo "wf: delete cancelled"
+  fi
+}
+
+delete_current_session() {
+  local session_name
+
+  if [[ -z "$TMUX" ]]; then
+    echo "wf: -d requires a session name outside tmux" >&2
+    return 1
+  fi
+
+  if ! session_name="$(tmux display-message -p '#S')"; then
+    echo "wf: could not determine current session" >&2
+    return 1
+  fi
+
+  delete_session "$session_name" "wf: delete current session '$session_name'? [y/N] "
+}
+
 show_help() {
   cat <<'EOF'
 Usage:
   wf
   wf <session_name>
+  wf -d
   wf -d <session_name>
   wf -label <window_name>
   wf --help
@@ -112,6 +145,10 @@ Commands:
 
   wf .
       Create a session named after the current directory.
+
+  wf -d
+      Prompt for confirmation, then delete the current session.
+      Only works from inside tmux.
 
   wf -d <session_name>
       Prompt for confirmation, then delete the session.
@@ -157,8 +194,18 @@ main() {
     -d)
       local session_name="$2"
 
+      if (( $# == 1 )); then
+        delete_current_session
+        return
+      fi
+
       if (( $# != 2 )); then
-        echo "Usage: wf -d <session_name>" >&2
+        echo "Usage: wf -d [session_name]" >&2
+        return 1
+      fi
+
+      if ! is_valid_session_name "$session_name"; then
+        print_invalid_session_name "$session_name"
         return 1
       fi
 
@@ -167,15 +214,7 @@ main() {
         return 1
       fi
 
-      read -q "REPLY?wf: delete '$session_name'? [y/N] "
-      echo
-
-      if [[ "$REPLY" == [yY] ]]; then
-        tmux kill-session -t "=$session_name"
-        echo "wf: deleted session '$session_name'"
-      else
-        echo "wf: delete cancelled"
-      fi
+      delete_session "$session_name" "wf: delete '$session_name'? [y/N] "
       ;;
 
     -*)
