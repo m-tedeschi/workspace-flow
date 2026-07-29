@@ -8,9 +8,14 @@ session_exists() {
 }
 
 list_sessions() {
-  if ! tmux list-sessions 2>/dev/null; then
+  local sessions
+
+  if ! sessions="$(tmux list-sessions 2>/dev/null)"; then
     echo "wf: no active sessions"
+    return
   fi
+
+  print -r -- "$sessions" | sort
 }
 
 switch_or_attach() {
