@@ -9,13 +9,27 @@ session_exists() {
 
 list_sessions() {
   local sessions
+  local session_name display_name created_epoch created_date created_time window_count attached_status
 
-  if ! sessions="$(tmux list-sessions 2>/dev/null)"; then
+  if ! sessions="$(tmux list-sessions -F '#S	#{session_created}	#{session_windows}	#{?session_attached,attached,}' 2>/dev/null)"; then
     echo "wf: no active sessions"
     return
   fi
 
-  print -r -- "$sessions" | sort
+  zmodload zsh/datetime
+
+  printf "%-24s %-8s %-8s %7s  %s\n" "SESSION" "DATE" "TIME" "WINDOWS" "STATUS"
+  print -r -- "$sessions" | sort -f | while IFS=$'\t' read -r session_name created_epoch window_count attached_status; do
+    if (( ${#session_name} > 24 )); then
+      display_name="${session_name[1,21]}..."
+    else
+      display_name="$session_name"
+    fi
+
+    created_date="$(strftime "%m-%d-%y" "$created_epoch")"
+    created_time="$(strftime "%H:%M" "$created_epoch")"
+    printf "%-24s %-8s %-8s %7s  %s\n" "$display_name" "$created_date" "$created_time" "$window_count" "$attached_status"
+  done
 }
 
 switch_or_attach() {
