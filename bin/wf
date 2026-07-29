@@ -175,15 +175,7 @@ detach_current_client() {
 
 show_help() {
   cat <<'EOF'
-Usage:
-  wf
-  wf <session_name>
-  wf ~
-  wf -d
-  wf -d <session_name>
-  wf -x
-  wf -label <window_name>
-  wf --help
+  wf - Workspace Flow. A lightweight tmux workspace manager
 
 Commands:
   wf
