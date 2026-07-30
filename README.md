@@ -133,7 +133,7 @@ The derived session name must contain at least one letter or number.
 wf ~
 ```
 
-This creates or enters a session named after your home directory. For example, if your home directory is `/Users/miketedeschi`, the session is named `miketedeschi`.
+This creates or enters a session named after your home directory. For example, if your home directory is `/Users/username`, the session is named `username`.
 
 When the session does not exist, `wf` creates it with four windows that start in your home directory.
 
