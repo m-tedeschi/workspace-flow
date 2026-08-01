@@ -1,9 +1,10 @@
-# wf — Workspace Flow
+# wf - Workspace Flow
 
-A lightweight tmux workspace manager.
+A lightweight tmux workspace manager for creating, entering, listing, labeling, detaching from, and deleting tmux sessions.
 
-`wf` provides a small, intention-based interface for creating, entering, listing, labeling, and deleting tmux sessions.
-It can also detach from the current session when you are done working in it.
+## Overview
+
+`wf` treats a tmux session as a workspace.
 
 Instead of remembering whether a session already exists, run:
 
@@ -11,19 +12,31 @@ Instead of remembering whether a session already exists, run:
 wf myproject
 ```
 
-`wf` will create the session if necessary, or enter it if it already exists.
+If the session exists, `wf` enters it. If it does not exist, `wf` creates it with four windows and enters it.
+
+The command describes intent rather than tmux mechanics:
+
+```sh
+wf leetcode
+```
+
+means:
+
+```text
+Take me to the leetcode workspace, creating it if necessary.
+```
 
 ## Features
 
 - Create tmux sessions with four windows
 - Create a session from the current directory name with `wf .`
-- Create a session from the home directory name with `wf ~`
+- Create or enter a home workspace with `wf ~`
 - Attach to existing sessions from outside tmux
 - Switch between sessions from inside tmux
-- Detach from the current tmux session
-- List active sessions
+- List active sessions in a compact, alphabetized table
 - Rename the current tmux window
-- Delete sessions with confirmation
+- Detach from the current tmux session
+- Delete named sessions or the current session with confirmation
 - Tab-complete existing session names in Zsh
 
 ## Requirements
@@ -58,7 +71,7 @@ It also installs the Zsh completion file to:
 ~/.local/share/zsh/site-functions/_wf
 ```
 
-If needed, the installer also adds a managed setup block to `~/.zshrc` so `wf` is on your `PATH` and Zsh can find the completion file.
+If needed, the installer adds a managed setup block to `~/.zshrc` so `wf` is on your `PATH` and Zsh can find the completion file.
 
 Restart your shell, or reload your shell configuration:
 
@@ -80,186 +93,65 @@ Expected output:
 
 ## Usage
 
-### List sessions
-
-Running `wf` without arguments lists active tmux sessions:
+List active sessions:
 
 ```sh
 wf
 ```
 
-### Create or enter a workspace
+Create or enter a named workspace:
 
 ```sh
 wf <session_name>
 ```
 
-Example:
+Create a workspace from the current directory:
 
 ```sh
-wf leetcode
+wf .
 ```
 
-When the session does not exist, `wf` creates it with four windows and selects the first window.
+When run from `~/dev/project`, this creates and enters a session named `project`. Directory names are converted to safe session names by replacing unsupported characters with `_`; for example, `big test` becomes `big_test`, and `project.name` becomes `project_name`.
 
-When the session already exists:
+Create or enter your home workspace:
 
-- Outside tmux, `wf` attaches to it.
-- Inside tmux, `wf` switches the current client to it.
+```sh
+wf ~
+```
+
+Rename the current tmux window:
+
+```sh
+wf -label <window_name>
+```
+
+Detach from the current tmux session:
+
+```sh
+wf -x
+```
+
+Delete a named session:
+
+```sh
+wf -d <session_name>
+```
+
+Delete the current session from inside tmux:
+
+```sh
+wf -d
+```
+
+Show help:
+
+```sh
+wf --help
+```
 
 Session names may only contain letters, numbers, `_`, and `-`. Session names must contain at least one letter or number and may not be `.` or `..`.
 
-### Create a workspace from the current directory
+## Future Improvements
 
-```sh
-wf .
-```
-
-When run from `~/dev/project`, `wf .` creates a session named `project` and enters it.
-
-Directory names are converted to safe session names by replacing unsupported characters with `_`. For example, `big test` becomes `big_test`, and `project.name` becomes `project_name`.
-
-If a session named `project` already exists, `wf` prints:
-
-```text
-wf: session already exists
-```
-
-The derived session name must contain at least one letter or number.
-
-### Create or enter your home workspace
-
-```sh
-wf ~
-```
-
-This creates or enters a session named after your home directory. For example, if your home directory is `/Users/username`, the session is named `username`.
-
-When the session does not exist, `wf` creates it with four windows that start in your home directory.
-
-### Rename the current window
-
-```sh
-wf -label <window_name>
-```
-
-Example:
-
-```sh
-wf -label Codex
-```
-
-Multiword labels are also supported:
-
-```sh
-wf -label Codex Work
-```
-
-This command must be run from inside a tmux session.
-
-### Detach from the current session
-
-```sh
-wf -x
-```
-
-This command detaches the current tmux client. It must be run from inside a tmux session.
-
-### Delete a session
-
-```sh
-wf -d <session_name>
-```
-
-Example:
-
-```sh
-wf -d leetcode
-```
-
-`wf` asks for confirmation before deleting the session.
-
-When run from inside tmux, `wf -d` without a session name deletes the current session after confirmation:
-
-```sh
-wf -d
-```
-
-Outside tmux, use `wf -d <session_name>`.
-
-Session names can be tab-completed for both `wf <session_name>` and `wf -d <session_name>`.
-
-### Show help
-
-```sh
-wf --help
-```
-
-The shorter form is also supported:
-
-```sh
-wf -h
-```
-
-## Command Reference
-
-```text
-wf
-    List active tmux sessions.
-
-wf <session_name>
-    Create the session if it does not exist.
-    Otherwise, attach or switch to it.
-
-wf .
-    Create a session named after the current directory.
-
-wf ~
-    Create the home workspace if it does not exist.
-    Otherwise, attach or switch to it.
-
-wf -label <window_name>
-    Rename the current tmux window.
-
-wf -d <session_name>
-    Prompt for confirmation and delete the session.
-
-wf -d
-    Prompt for confirmation and delete the current session.
-    Only works from inside tmux.
-
-wf -x
-    Detach from the current tmux session.
-    Only works from inside tmux.
-
-wf --help
-    Display the help message.
-```
-
-## Repository Structure
-
-```text
-workspace-flow/
-├── bin/
-│   └── wf
-├── completions/
-│   └── _wf
-├── README.md
-└── install.sh
-```
-
-## Philosophy
-
-`wf` treats a tmux session as a workspace.
-
-The command describes intent rather than tmux mechanics:
-
-```sh
-wf leetcode
-```
-
-means:
-
-> Take me to the `leetcode` workspace, creating it if necessary.
-
-The project intentionally keeps the common workflow short and predictable.
+- Add a small shell test suite around a stubbed `tmux` command
+- Keep the command set focused on tmux workspace management
