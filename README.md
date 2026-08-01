@@ -105,7 +105,7 @@ Expected output:
 | `wf -d` | Delete the current session after confirmation. Only works from inside tmux. |
 | `wf --help` | Show help. |
 
-When `wf .` is run from `~/dev/project`, it creates and enters a session named `project`. Directory names are converted to safe session names by replacing unsupported characters with `_`; for example, `big test` becomes `big_test`, and `project.name` becomes `project_name`.
+When `wf .` is run from `~/dev/project`, it creates and enters a session named `project`. Directory names are converted to safe session names by replacing unsupported characters with `_`; for example, `spaced directory` becomes `spaced_directory`, and `project.name` becomes `project_name`.
 
 Session names may only contain letters, numbers, `_`, and `-`. Session names must contain at least one letter or number and may not be `.` or `..`.
 
