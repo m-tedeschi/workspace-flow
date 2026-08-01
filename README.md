@@ -17,13 +17,13 @@ If the session exists, `wf` enters it. If it does not exist, `wf` creates it wit
 The command describes intent rather than tmux mechanics:
 
 ```sh
-wf leetcode
+wf programming
 ```
 
 means:
 
 ```text
-Take me to the leetcode workspace, creating it if necessary.
+Take me to the programming workspace, creating it if necessary.
 ```
 
 ## Features
