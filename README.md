@@ -93,61 +93,19 @@ Expected output:
 
 ## Usage
 
-List active sessions:
+| Command | Description |
+| --- | --- |
+| `wf` | List active sessions. |
+| `wf <session_name>` | Create or enter a named workspace. |
+| `wf .` | Create a workspace from the current directory. |
+| `wf ~` | Create or enter your home workspace. |
+| `wf -label <window_name>` | Rename the current tmux window. |
+| `wf -x` | Detach from the current tmux session. |
+| `wf -d <session_name>` | Delete a named session after confirmation. |
+| `wf -d` | Delete the current session after confirmation. Only works from inside tmux. |
+| `wf --help` | Show help. |
 
-```sh
-wf
-```
-
-Create or enter a named workspace:
-
-```sh
-wf <session_name>
-```
-
-Create a workspace from the current directory:
-
-```sh
-wf .
-```
-
-When run from `~/dev/project`, this creates and enters a session named `project`. Directory names are converted to safe session names by replacing unsupported characters with `_`; for example, `big test` becomes `big_test`, and `project.name` becomes `project_name`.
-
-Create or enter your home workspace:
-
-```sh
-wf ~
-```
-
-Rename the current tmux window:
-
-```sh
-wf -label <window_name>
-```
-
-Detach from the current tmux session:
-
-```sh
-wf -x
-```
-
-Delete a named session:
-
-```sh
-wf -d <session_name>
-```
-
-Delete the current session from inside tmux:
-
-```sh
-wf -d
-```
-
-Show help:
-
-```sh
-wf --help
-```
+When `wf .` is run from `~/dev/project`, it creates and enters a session named `project`. Directory names are converted to safe session names by replacing unsupported characters with `_`; for example, `big test` becomes `big_test`, and `project.name` becomes `project_name`.
 
 Session names may only contain letters, numbers, `_`, and `-`. Session names must contain at least one letter or number and may not be `.` or `..`.
 
