@@ -32,6 +32,47 @@ list_sessions() {
   done
 }
 
+list_repo_statuses() {
+  local directory directory_name display_name branch repo_status found_repo
+
+  found_repo=0
+
+  for directory in ./*(/N); do
+    if ! git -C "$directory" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+      continue
+    fi
+
+    if (( found_repo == 0 )); then
+      printf "%-24s %-24s %s\n" "DIRECTORY" "BRANCH" "STATUS"
+      found_repo=1
+    fi
+
+    directory_name="${directory:t}"
+    if (( ${#directory_name} > 24 )); then
+      display_name="${directory_name[1,21]}..."
+    else
+      display_name="$directory_name"
+    fi
+
+    branch="$(git -C "$directory" branch --show-current 2>/dev/null)"
+    if [[ -z "$branch" ]]; then
+      branch="detached:$(git -C "$directory" rev-parse --short HEAD 2>/dev/null)"
+    fi
+
+    if [[ -n "$(git -C "$directory" status --porcelain 2>/dev/null)" ]]; then
+      repo_status="uncommitted changes"
+    else
+      repo_status="up to date"
+    fi
+
+    printf "%-24s %-24s %s\n" "$display_name" "$branch" "$repo_status"
+  done
+
+  if (( found_repo == 0 )); then
+    echo "wf: no git repositories found"
+  fi
+}
+
 switch_or_attach() {
   local session_name="$1"
 
@@ -226,6 +267,10 @@ Commands:
       Rename the current tmux window.
       Only works from inside tmux.
 
+  wf --status
+      Show branch and working tree status for git repositories in the
+      current directory.
+
   wf --help
       Display this help message.
 EOF
@@ -241,6 +286,15 @@ main() {
 
     --help|-h)
       show_help
+      ;;
+
+    --status)
+      if (( $# != 1 )); then
+        echo "Usage: wf --status" >&2
+        return 1
+      fi
+
+      list_repo_statuses
       ;;
 
     -label)

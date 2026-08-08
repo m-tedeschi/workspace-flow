@@ -34,6 +34,7 @@ Take me to the programming workspace, creating it if necessary.
 - Attach to existing sessions from outside tmux
 - Switch between sessions from inside tmux
 - List active sessions in a compact, alphabetized table
+- Show git repository branch and working tree status for child directories
 - Rename the current tmux window
 - Detach from the current tmux session
 - Delete named sessions or the current session with confirmation
@@ -100,6 +101,7 @@ Expected output:
 | `wf .` | Create a workspace from the current directory. |
 | `wf ~` | Create or enter your home workspace. |
 | `wf -label <window_name>` | Rename the current tmux window. |
+| `wf --status` | Show branch and working tree status for git repositories in the current directory. |
 | `wf -x` | Detach from the current tmux session. |
 | `wf -d <session_name>` | Delete a named session after confirmation. |
 | `wf -d` | Delete the current session after confirmation. Only works from inside tmux. |
