@@ -12,7 +12,7 @@ Instead of remembering whether a session already exists, run:
 wf myproject
 ```
 
-If the session exists, `wf` enters it. If it does not exist, `wf` creates it with four windows and enters it.
+If the session exists, `wf` enters it. If it does not exist, `wf` creates it with one window and enters it.
 
 The command describes intent rather than tmux mechanics:
 
@@ -28,7 +28,7 @@ Take me to the programming workspace, creating it if necessary.
 
 ## Features
 
-- Create tmux sessions with four windows
+- Create tmux sessions with one window
 - Create a session from the current directory name with `wf .`
 - Create or enter a home workspace with `wf ~`
 - Attach to existing sessions from outside tmux
