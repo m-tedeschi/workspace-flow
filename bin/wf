@@ -448,99 +448,30 @@ close_current_window() {
 
 show_help() {
   cat <<'EOF'
-  wf - Workspace Flow. A lightweight tmux workspace manager
+wf - Workspace Flow
 
-Commands:
-  wf
-      List active tmux sessions.
+  wf                    List active workspaces.
+  wf <name>             Create or enter a workspace.
+  wf .                  Create a workspace named after the current directory.
+  wf ~                  Create or enter a workspace in your home directory.
+  wf -p <directory>     Create or enter a workspace at a path; reject name conflicts.
+  wf -d [name]          Confirm and delete a workspace; defaults to current (tmux).
+  wf -status            Show Git branch and changes for child directories.
+  wf --help, -h         Show this help.
 
-  wf <session_name>
-      Switch or attach to the session if it exists.
-      Otherwise, create it with one window.
-
-  wf .
-      Create a session named after the current directory.
-
-  wf ~
-      Create a session named after the home directory.
-      New windows start in the home directory.
-
-  wf -p <directory>
-      Create or enter a workspace named after the directory.
-      Start in that directory without changing the invoking shell's directory.
-      Refuse to enter a same-named workspace belonging to another directory.
-
-  wf -d
-      Prompt for confirmation, then delete the current session.
-      Only works from inside tmux.
-
-  wf -d <session_name>
-      Prompt for confirmation, then delete the session.
-
-  wf -x
-      Detach from the current tmux session.
-      Only works from inside tmux.
-
-  wf -n [n]
-      Create n windows in the invoking shell's current directory.
-      Defaults to 1. n must be a whole number from 0 to 5; 0 creates no windows.
-      Focus the last new window.
-      Only works from inside tmux.
-
-  wf -N [n]
-      Create n windows in the workspace's starting directory.
-      Defaults to 1. n must be a whole number from 0 to 5; 0 creates no windows.
-      Focus the last new window.
-      Only works from inside tmux.
-
-  wf -cw
-      Close the current window and all its panes, terminating their programs.
-      Refuse to close the last window in a session.
-      Only works from inside tmux.
-
-  wf -s
-      Split the current pane into left and right panes.
-      Focus the new pane, starting in the current pane's directory.
-      Only works from inside tmux.
-
-  wf -S
-      Split the current pane into top and bottom panes.
-      Focus the new pane, starting in the current pane's directory.
-      Only works from inside tmux.
-
-  wf -tri
-      Create a full-height left pane (1) and stacked right panes (2 above 3).
-      New panes start in the original pane's directory. Focus pane 1.
-      Requires tmux and exactly one pane in the current window.
-
-  wf -quad
-      Turn a single-pane window into a 2x2 grid, starting in its directory.
-      Number panes 1 (top left), 2 (top right), 3 (bottom left), 4 (bottom right).
-      Focus pane 1. Requires tmux and exactly one pane in the current window.
-
-  wf -cs
-      Close the focused pane, terminating programs running inside it.
-      Refuse to close the last pane in a window.
-      Only works from inside tmux.
-
-  wf -cas
-      Close all other panes in this window, terminating their programs.
-      Keep the pane where this command is run. Only works inside tmux.
-
-  wf -caw
-      Close all other windows in this workspace, terminating their programs.
-      Keep the window where this command is run. Only works inside tmux.
-
-  wf -label <window_name>
-      Rename the current tmux window.
-      Only works from inside tmux.
-
-  wf -status
-      Show branch and working tree status for git repositories in the
-      current directory.
-
-  wf --help
-      Display this help message.
+Inside tmux:
+  wf -x                 Detach from the workspace.
+  wf -n [0-5]           New windows here; defaults to 1, 0 does nothing.
+  wf -N [0-5]           New windows at the workspace directory; defaults to 1.
+  wf -s                 Split left/right in the current pane's directory.
+  wf -S                 Split top/bottom in the current pane's directory.
+  wf -tri               Left 1, top right 2, bottom right 3; requires 1 pane.
+  wf -quad              2x2 grid numbered left to right, top to bottom; requires 1 pane.
+  wf -cs                Close this pane and its programs; protect the last pane.
+  wf -cas               Close all other panes and their programs in this window.
+  wf -cw                Close this window and its programs; protect the last window.
+  wf -caw               Close all other windows and their programs in this workspace.
+  wf -label <name>      Rename the current window.
 EOF
 }
 
