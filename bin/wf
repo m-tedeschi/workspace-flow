@@ -163,6 +163,46 @@ create_session_from_current_directory() {
   switch_or_attach "$session_name"
 }
 
+create_or_enter_path_session() {
+  local directory="$1"
+  local session_name existing_directory
+
+  # Handle quoted tilde paths without evaluating shell expressions.
+  if [[ "$directory" == "~" ]]; then
+    directory="$HOME"
+  elif [[ "$directory" == '~/'* ]]; then
+    directory="$HOME/${directory#\~/}"
+  fi
+
+  if [[ -z "$directory" || ! -d "$directory" ]]; then
+    echo "wf: directory does not exist: '$directory'" >&2
+    return 1
+  fi
+
+  directory="${directory:A}"
+  if ! session_name="$(session_name_from_directory_name "${directory:t}")"; then
+    echo "wf: could not derive a safe session name from '$directory'" >&2
+    return 1
+  fi
+
+  if session_exists "$session_name"; then
+    if ! existing_directory="$(tmux display-message -p -t "=$session_name:" '#{?@wf_directory,#{@wf_directory},#{session_path}}')"; then
+      echo "wf: could not determine directory for session '$session_name'" >&2
+      return 1
+    fi
+
+    if [[ -z "$existing_directory" || "${existing_directory:A}" != "$directory" ]]; then
+      echo "wf: session '$session_name' belongs to a different directory: '$existing_directory'" >&2
+      return 1
+    fi
+  elif ! create_default_session_in_directory "$session_name" "$directory"; then
+    echo "wf: failed to create session '$session_name'" >&2
+    return 1
+  fi
+
+  switch_or_attach "$session_name"
+}
+
 create_or_enter_home_session() {
   local directory_name="${HOME:t}"
   local session_name
@@ -343,6 +383,11 @@ Commands:
       Create a session named after the home directory.
       New windows start in the home directory.
 
+  wf -p <directory>
+      Create or enter a workspace named after the directory.
+      Start in that directory without changing the invoking shell's directory.
+      Refuse to enter a same-named workspace belonging to another directory.
+
   wf -d
       Prompt for confirmation, then delete the current session.
       Only works from inside tmux.
@@ -417,6 +462,15 @@ main() {
 
     --help|-h)
       show_help
+      ;;
+
+    -p)
+      if (( $# != 2 )); then
+        echo "Usage: wf -p <directory>" >&2
+        return 1
+      fi
+
+      create_or_enter_path_session "$2"
       ;;
 
     -status)

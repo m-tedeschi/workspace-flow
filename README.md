@@ -31,6 +31,7 @@ Take me to the programming workspace, creating it if necessary.
 - Create tmux sessions with one window
 - Create a session from the current directory name with `wf .`
 - Create or enter a home workspace with `wf ~`
+- Create or enter a workspace at a path with `wf -p`, with directory tab completion
 - Attach to existing sessions from outside tmux
 - Switch between sessions from inside tmux
 - List active sessions in a compact, alphabetized table
@@ -104,6 +105,7 @@ Expected output:
 | `wf <session_name>` | Create or enter a named workspace. |
 | `wf .` | Create a workspace from the current directory. |
 | `wf ~` | Create or enter your home workspace. |
+| `wf -p <directory>` | Create or enter a workspace named after the directory, without changing the invoking shell's directory. Tab-completes directories. |
 | `wf -label <window_name>` | Rename the current tmux window. |
 | `wf -status` | Show branch and working tree status for git repositories in the current directory. |
 | `wf -x` | Detach from the current tmux session. |
@@ -122,6 +124,8 @@ Expected output:
 When `wf .` is run from `~/dev/project`, it creates and enters a session named `project`. Directory names are converted to safe session names by replacing unsupported characters with `_`; for example, `spaced directory` becomes `spaced_directory`, and `project.name` becomes `project_name`.
 
 Session names may only contain letters, numbers, `_`, and `-`. Session names must contain at least one letter or number and may not be `.` or `..`.
+
+`wf -p` accepts relative paths, absolute paths, `~`, and quoted paths with spaces, such as `wf -p "~/dev/My Project"`. Paths are resolved to their physical directory before deriving the session name. New workspaces start with one window and remember that directory for `-C` and `-Cn`. Existing workspaces are entered only when their saved directory (or tmux's session starting directory for older sessions) matches; a same-named workspace at another path produces an error.
 
 New workspaces remember the directory where they were created (`wf ~` uses the home directory). `wf -C` returns to that directory even after you change directories in a pane. For existing sessions without a saved workspace directory, it uses tmux's session starting directory. If that directory no longer exists, the command reports an error.
 

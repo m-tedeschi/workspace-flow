@@ -15,6 +15,7 @@ _wf_sessions() {
 _arguments -C \
   '(-h --help)'{-h,--help}'[display help]' \
   '-status[show git repository statuses in the current directory]' \
+  '-p[create or enter a workspace at a directory]:directory:_directories' \
   '-d[delete a tmux session]:session:_wf_sessions' \
   '-x[detach from the current tmux session]' \
   '-c[create a window in the current directory]' \
