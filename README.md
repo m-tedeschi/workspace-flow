@@ -101,7 +101,7 @@ Expected output:
 | `wf .` | Create a workspace from the current directory. |
 | `wf ~` | Create or enter your home workspace. |
 | `wf -label <window_name>` | Rename the current tmux window. |
-| `wf --status` | Show branch and working tree status for git repositories in the current directory. |
+| `wf -status` | Show branch and working tree status for git repositories in the current directory. |
 | `wf -x` | Detach from the current tmux session. |
 | `wf -d <session_name>` | Delete a named session after confirmation. |
 | `wf -d` | Delete the current session after confirmation. Only works from inside tmux. |
