@@ -233,6 +233,41 @@ detach_current_client() {
   tmux detach-client
 }
 
+split_current_pane() {
+  if [[ -z "$TMUX" ]]; then
+    echo "wf: -s must be run inside a tmux session" >&2
+    return 1
+  fi
+
+  tmux split-window -h -c '#{pane_current_path}'
+}
+
+close_current_pane() {
+  local pane_count
+
+  if [[ -z "$TMUX" ]]; then
+    echo "wf: -cs must be run inside a tmux session" >&2
+    return 1
+  fi
+
+  if ! pane_count="$(tmux display-message -p '#{window_panes}')"; then
+    echo "wf: could not determine pane count" >&2
+    return 1
+  fi
+
+  if [[ "$pane_count" != <-> ]]; then
+    echo "wf: could not determine pane count" >&2
+    return 1
+  fi
+
+  if (( pane_count <= 1 )); then
+    echo "wf: cannot close the last pane in a window" >&2
+    return 1
+  fi
+
+  tmux kill-pane
+}
+
 show_help() {
   cat <<'EOF'
   wf - Workspace Flow. A lightweight tmux workspace manager
@@ -261,6 +296,16 @@ Commands:
 
   wf -x
       Detach from the current tmux session.
+      Only works from inside tmux.
+
+  wf -s
+      Split the current pane into left and right panes.
+      Focus the new pane, starting in the current pane's directory.
+      Only works from inside tmux.
+
+  wf -cs
+      Close the focused pane, terminating programs running inside it.
+      Refuse to close the last pane in a window.
       Only works from inside tmux.
 
   wf -label <window_name>
@@ -338,6 +383,19 @@ main() {
       fi
 
       delete_session "$session_name" "wf: delete '$session_name'? [y/N] "
+      ;;
+
+    -s|-cs)
+      if (( $# != 1 )); then
+        echo "Usage: wf $command" >&2
+        return 1
+      fi
+
+      if [[ "$command" == "-s" ]]; then
+        split_current_pane
+      else
+        close_current_pane
+      fi
       ;;
 
     -x)
