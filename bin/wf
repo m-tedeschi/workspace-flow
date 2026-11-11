@@ -455,11 +455,11 @@ wf - Workspace Flow
   wf .                  Create a workspace named after the current directory.
   wf ~                  Create or enter a workspace in your home directory.
   wf -p <directory>     Create or enter a workspace at a path; reject name conflicts.
-  wf -d [name]          Confirm and delete a workspace; defaults to current (tmux).
+  wf -d [name]          Confirm and delete a workspace; defaults to current workspace.
   wf -status            Show Git branch and changes for child directories.
   wf --help, -h         Show this help.
 
-Inside tmux:
+Inside a workspace:
   wf -x                 Detach from the workspace.
   wf -n [0-5]           New windows here; defaults to 1, 0 does nothing.
   wf -N [0-5]           New windows at the workspace directory; defaults to 1.
