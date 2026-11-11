@@ -269,13 +269,19 @@ close_current_pane() {
 create_window() {
   local command="$1"
   local directory="$PWD"
+  local count="${2:-1}"
+  local index
 
   if [[ -z "$TMUX" ]]; then
     echo "wf: $command must be run inside a tmux session" >&2
     return 1
   fi
 
-  if [[ "$command" == "-C" ]]; then
+  if (( count == 0 )); then
+    return 0
+  fi
+
+  if [[ "$command" == "-C" || "$command" == "-Cn" ]]; then
     if ! directory="$(tmux display-message -p '#{?@wf_directory,#{@wf_directory},#{session_path}}')"; then
       echo "wf: could not determine workspace directory" >&2
       return 1
@@ -287,7 +293,9 @@ create_window() {
     return 1
   fi
 
-  tmux new-window -c "$directory"
+  for (( index = 0; index < count; index++ )); do
+    tmux new-window -c "$directory" || return 1
+  done
 }
 
 close_current_window() {
@@ -352,6 +360,18 @@ Commands:
 
   wf -C
       Create and focus a window in the workspace's starting directory.
+      Only works from inside tmux.
+
+  wf -cn <n>
+      Create n windows in the invoking shell's current directory.
+      n must be a whole number from 0 to 5. Zero creates no windows.
+      Focus the last new window.
+      Only works from inside tmux.
+
+  wf -Cn <n>
+      Create n windows in the workspace's starting directory.
+      n must be a whole number from 0 to 5. Zero creates no windows.
+      Focus the last new window.
       Only works from inside tmux.
 
   wf -cw
@@ -449,6 +469,21 @@ main() {
       fi
 
       delete_session "$session_name" "wf: delete '$session_name'? [y/N] "
+      ;;
+
+    -cn|-Cn)
+      if (( $# != 2 )); then
+        echo "Usage: wf $command <n>" >&2
+        return 1
+      fi
+
+      local count="$2"
+      if [[ ! "$count" =~ '^[0-5]$' ]]; then
+        echo "wf: window count must be a whole number from 0 to 5" >&2
+        return 1
+      fi
+
+      create_window "$command" "$count"
       ;;
 
     -c|-C|-cw)

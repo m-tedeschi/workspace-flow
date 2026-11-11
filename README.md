@@ -109,6 +109,8 @@ Expected output:
 | `wf -x` | Detach from the current tmux session. |
 | `wf -c` | Create and focus a window in the invoking shell's current directory. Only works inside tmux. |
 | `wf -C` | Create and focus a window in the workspace's starting directory. Only works inside tmux. |
+| `wf -cn <n>` | Create n windows in the invoking shell's current directory and focus the last new window. Requires a whole-number count from 0 to 5 and tmux; 0 creates no windows. |
+| `wf -Cn <n>` | Create n windows in the workspace's starting directory and focus the last new window. Requires a whole-number count from 0 to 5 and tmux; 0 creates no windows. |
 | `wf -cw` | Close the current window and all its panes, terminating their programs. Refuses to close the last window in a session. Only works inside tmux. |
 | `wf -s` | Split the current pane into left and right panes, opening and focusing the new pane in the current pane's directory. Only works inside tmux. |
 | `wf -hs` | Split the current pane into top and bottom panes, opening and focusing the new pane in the current pane's directory. Only works inside tmux. |
