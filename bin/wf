@@ -280,6 +280,42 @@ split_current_pane() {
   tmux split-window "$direction" -c '#{pane_current_path}'
 }
 
+create_pane_layout() {
+  local command="$1"
+  local pane_count original_pane new_pane directory
+
+  if [[ -z "$TMUX" ]]; then
+    echo "wf: $command must be run inside a tmux session" >&2
+    return 1
+  fi
+
+  if ! pane_count="$(tmux display-message -p '#{window_panes}')"; then
+    echo "wf: could not determine pane count" >&2
+    return 1
+  fi
+
+  if [[ "$pane_count" != "1" ]]; then
+    echo "wf: $command requires exactly 1 pane; try again with 1 pane in the current window" >&2
+    return 1
+  fi
+
+  original_pane="$(tmux display-message -p '#{pane_id}')" || return 1
+  directory="$(tmux display-message -p '#{pane_current_path}')" || return 1
+
+  if [[ "$command" == "-tri" ]]; then
+    # Keep the left pane full-height and split the right half into two rows.
+    new_pane="$(tmux split-window -h -d -P -F '#{pane_id}' -t "$original_pane" -c "$directory")" || return 1
+    tmux split-window -v -d -t "$new_pane" -c "$directory" || return 1
+  else
+    # Split into rows, then split each row to keep indexes in reading order.
+    new_pane="$(tmux split-window -v -d -P -F '#{pane_id}' -t "$original_pane" -c "$directory")" || return 1
+    tmux split-window -h -d -t "$original_pane" -c "$directory" || return 1
+    tmux split-window -h -d -t "$new_pane" -c "$directory" || return 1
+  fi
+  tmux set-option -w -t "$original_pane" pane-base-index 1 || return 1
+  tmux select-pane -t "$original_pane"
+}
+
 close_current_pane() {
   local pane_count
 
@@ -304,6 +340,26 @@ close_current_pane() {
   fi
 
   tmux kill-pane
+}
+
+close_other_panes() {
+  local pane_id="$TMUX_PANE"
+
+  if [[ -z "$TMUX" ]]; then
+    echo "wf: -ca must be run inside a tmux session" >&2
+    return 1
+  fi
+
+  if [[ -z "$pane_id" ]]; then
+    pane_id="$(tmux display-message -p '#{pane_id}')" || return 1
+  fi
+
+  if [[ -z "$pane_id" ]]; then
+    echo "wf: could not determine current pane" >&2
+    return 1
+  fi
+
+  tmux kill-pane -a -t "$pane_id"
 }
 
 create_window() {
@@ -434,10 +490,24 @@ Commands:
       Focus the new pane, starting in the current pane's directory.
       Only works from inside tmux.
 
+  wf -tri
+      Create a full-height left pane (1) and stacked right panes (2 above 3).
+      New panes start in the original pane's directory. Focus pane 1.
+      Requires tmux and exactly one pane in the current window.
+
+  wf -quad
+      Turn a single-pane window into a 2x2 grid, starting in its directory.
+      Number panes 1 (top left), 2 (top right), 3 (bottom left), 4 (bottom right).
+      Focus pane 1. Requires tmux and exactly one pane in the current window.
+
   wf -cs
       Close the focused pane, terminating programs running inside it.
       Refuse to close the last pane in a window.
       Only works from inside tmux.
+
+  wf -ca
+      Close all other panes in this window, terminating their programs.
+      Keep the pane where this command is run. Only works inside tmux.
 
   wf -label <window_name>
       Rename the current tmux window.
@@ -551,6 +621,24 @@ main() {
       else
         create_window "$command"
       fi
+      ;;
+
+    -quad|-tri)
+      if (( $# != 1 )); then
+        echo "Usage: wf $command" >&2
+        return 1
+      fi
+
+      create_pane_layout "$command"
+      ;;
+
+    -ca)
+      if (( $# != 1 )); then
+        echo "Usage: wf -ca" >&2
+        return 1
+      fi
+
+      close_other_panes
       ;;
 
     -s|-hs|-cs)
