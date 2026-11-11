@@ -26,7 +26,7 @@ _arguments -C \
   '-quad[split a single-pane window into a numbered 2x2 grid]' \
   '-tri[create a full-height left pane and two stacked right panes]' \
   '-cs[close the focused pane unless it is the last pane]' \
-  '-ca[close all other panes in the current window]' \
+  '-cas[close all other panes in the current window]' \
   '-caw[close all other windows in the current workspace]' \
   '-label[rename the current tmux window]:window name:' \
   '1:session:_wf_sessions'

@@ -117,7 +117,7 @@ Expected output:
 | `wf -quad` | Create a 2×2 grid: top left 1, top right 2, bottom left 3, bottom right 4. Requires tmux and exactly one pane in the current window. New panes use the original pane's directory; focuses pane 1 and sets pane numbering to start at 1 for this window. |
 | `wf -tri` | Create a full-height left pane (1), top right pane (2), and bottom right pane (3). Requires tmux and exactly one pane in the current window. New panes use the original pane's directory; focuses pane 1 and sets pane numbering to start at 1 for this window. |
 | `wf -cs` | Close the focused pane and terminate programs running inside it. Refuses to close the last pane in a window. Only works inside tmux. |
-| `wf -ca` | Close all other panes in the current window, terminating their programs. Keeps the pane where the command is run. Only works inside tmux; does nothing if it is already the only pane. |
+| `wf -cas` | Close all other panes in the current window, terminating their programs. Keeps the pane where the command is run. Only works inside tmux; does nothing if it is already the only pane. |
 | `wf -caw` | Close all other windows in the current workspace, terminating their programs. Keeps the invoking window and all its panes. Requires tmux; does nothing if it is already the only window. |
 | `wf -d <session_name>` | Delete a named session after confirmation. |
 | `wf -d` | Delete the current session after confirmation. Only works from inside tmux. |

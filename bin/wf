@@ -346,7 +346,7 @@ close_other_panes() {
   local pane_id="$TMUX_PANE"
 
   if [[ -z "$TMUX" ]]; then
-    echo "wf: -ca must be run inside a tmux session" >&2
+    echo "wf: -cas must be run inside a tmux session" >&2
     return 1
   fi
 
@@ -523,7 +523,7 @@ Commands:
       Refuse to close the last pane in a window.
       Only works from inside tmux.
 
-  wf -ca
+  wf -cas
       Close all other panes in this window, terminating their programs.
       Keep the pane where this command is run. Only works inside tmux.
 
@@ -650,7 +650,7 @@ main() {
       create_pane_layout "$command"
       ;;
 
-    -ca|-caw)
+    -cas|-caw)
       if (( $# != 1 )); then
         echo "Usage: wf $command" >&2
         return 1
