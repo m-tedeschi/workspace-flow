@@ -36,6 +36,8 @@ Take me to the programming workspace, creating it if necessary.
 - List active sessions in a compact, alphabetized table
 - Show git repository branch and working tree status for child directories
 - Rename the current tmux window
+- Create windows in the current directory or the workspace's starting directory
+- Close the current window while protecting the last window in a session
 - Split the current pane into left/right or top/bottom panes
 - Close the focused pane while protecting the last pane in a window
 - Detach from the current tmux session
@@ -105,6 +107,9 @@ Expected output:
 | `wf -label <window_name>` | Rename the current tmux window. |
 | `wf -status` | Show branch and working tree status for git repositories in the current directory. |
 | `wf -x` | Detach from the current tmux session. |
+| `wf -c` | Create and focus a window in the invoking shell's current directory. Only works inside tmux. |
+| `wf -C` | Create and focus a window in the workspace's starting directory. Only works inside tmux. |
+| `wf -cw` | Close the current window and all its panes, terminating their programs. Refuses to close the last window in a session. Only works inside tmux. |
 | `wf -s` | Split the current pane into left and right panes, opening and focusing the new pane in the current pane's directory. Only works inside tmux. |
 | `wf -hs` | Split the current pane into top and bottom panes, opening and focusing the new pane in the current pane's directory. Only works inside tmux. |
 | `wf -cs` | Close the focused pane and terminate programs running inside it. Refuses to close the last pane in a window. Only works inside tmux. |
@@ -115,6 +120,8 @@ Expected output:
 When `wf .` is run from `~/dev/project`, it creates and enters a session named `project`. Directory names are converted to safe session names by replacing unsupported characters with `_`; for example, `spaced directory` becomes `spaced_directory`, and `project.name` becomes `project_name`.
 
 Session names may only contain letters, numbers, `_`, and `-`. Session names must contain at least one letter or number and may not be `.` or `..`.
+
+New workspaces remember the directory where they were created (`wf ~` uses the home directory). `wf -C` returns to that directory even after you change directories in a pane. For existing sessions without a saved workspace directory, it uses tmux's session starting directory. If that directory no longer exists, the command reports an error.
 
 ## Future Improvements
 

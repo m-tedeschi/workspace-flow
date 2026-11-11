@@ -84,13 +84,7 @@ switch_or_attach() {
 }
 
 create_default_session() {
-  local session_name="$1"
-
-  tmux new-session -d -s "$session_name" &&
-    tmux new-window -t "=$session_name" &&
-    tmux new-window -t "=$session_name" &&
-    tmux new-window -t "=$session_name" &&
-    tmux select-window -t "=$session_name:1"
+  create_default_session_in_directory "$1" "$PWD"
 }
 
 create_default_session_in_directory() {
@@ -98,6 +92,7 @@ create_default_session_in_directory() {
   local directory="$2"
 
   tmux new-session -d -s "$session_name" -c "$directory" &&
+    tmux set-option -t "=$session_name" @wf_directory "$directory" &&
     tmux new-window -t "=$session_name" -c "$directory" &&
     tmux new-window -t "=$session_name" -c "$directory" &&
     tmux new-window -t "=$session_name" -c "$directory" &&
@@ -275,6 +270,56 @@ close_current_pane() {
   tmux kill-pane
 }
 
+create_window() {
+  local command="$1"
+  local directory="$PWD"
+
+  if [[ -z "$TMUX" ]]; then
+    echo "wf: $command must be run inside a tmux session" >&2
+    return 1
+  fi
+
+  if [[ "$command" == "-C" ]]; then
+    if ! directory="$(tmux display-message -p '#{?@wf_directory,#{@wf_directory},#{session_path}}')"; then
+      echo "wf: could not determine workspace directory" >&2
+      return 1
+    fi
+  fi
+
+  if [[ -z "$directory" || ! -d "$directory" ]]; then
+    echo "wf: window directory does not exist: '$directory'" >&2
+    return 1
+  fi
+
+  tmux new-window -c "$directory"
+}
+
+close_current_window() {
+  local window_count
+
+  if [[ -z "$TMUX" ]]; then
+    echo "wf: -cw must be run inside a tmux session" >&2
+    return 1
+  fi
+
+  if ! window_count="$(tmux display-message -p '#{session_windows}')"; then
+    echo "wf: could not determine window count" >&2
+    return 1
+  fi
+
+  if [[ "$window_count" != <-> ]]; then
+    echo "wf: could not determine window count" >&2
+    return 1
+  fi
+
+  if (( window_count <= 1 )); then
+    echo "wf: cannot close the last window in a session; use 'wf -d' to delete the workspace" >&2
+    return 1
+  fi
+
+  tmux kill-window
+}
+
 show_help() {
   cat <<'EOF'
   wf - Workspace Flow. A lightweight tmux workspace manager
@@ -303,6 +348,19 @@ Commands:
 
   wf -x
       Detach from the current tmux session.
+      Only works from inside tmux.
+
+  wf -c
+      Create and focus a window in the invoking shell's current directory.
+      Only works from inside tmux.
+
+  wf -C
+      Create and focus a window in the workspace's starting directory.
+      Only works from inside tmux.
+
+  wf -cw
+      Close the current window and all its panes, terminating their programs.
+      Refuse to close the last window in a session.
       Only works from inside tmux.
 
   wf -s
@@ -395,6 +453,19 @@ main() {
       fi
 
       delete_session "$session_name" "wf: delete '$session_name'? [y/N] "
+      ;;
+
+    -c|-C|-cw)
+      if (( $# != 1 )); then
+        echo "Usage: wf $command" >&2
+        return 1
+      fi
+
+      if [[ "$command" == "-cw" ]]; then
+        close_current_window
+      else
+        create_window "$command"
+      fi
       ;;
 
     -s|-hs|-cs)

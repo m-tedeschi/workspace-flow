@@ -17,6 +17,9 @@ _arguments -C \
   '-status[show git repository statuses in the current directory]' \
   '-d[delete a tmux session]:session:_wf_sessions' \
   '-x[detach from the current tmux session]' \
+  '-c[create a window in the current directory]' \
+  '-C[create a window in the workspace starting directory]' \
+  '-cw[close the current window unless it is the last window]' \
   '-s[split the current pane into left and right panes]' \
   '-hs[split the current pane into top and bottom panes]' \
   '-cs[close the focused pane unless it is the last pane]' \
