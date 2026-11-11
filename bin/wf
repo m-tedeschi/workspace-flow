@@ -234,12 +234,19 @@ detach_current_client() {
 }
 
 split_current_pane() {
+  local command="$1"
+  local direction="-h"
+
   if [[ -z "$TMUX" ]]; then
-    echo "wf: -s must be run inside a tmux session" >&2
+    echo "wf: $command must be run inside a tmux session" >&2
     return 1
   fi
 
-  tmux split-window -h -c '#{pane_current_path}'
+  if [[ "$command" == "-hs" ]]; then
+    direction="-v"
+  fi
+
+  tmux split-window "$direction" -c '#{pane_current_path}'
 }
 
 close_current_pane() {
@@ -300,6 +307,11 @@ Commands:
 
   wf -s
       Split the current pane into left and right panes.
+      Focus the new pane, starting in the current pane's directory.
+      Only works from inside tmux.
+
+  wf -hs
+      Split the current pane into top and bottom panes.
       Focus the new pane, starting in the current pane's directory.
       Only works from inside tmux.
 
@@ -385,16 +397,16 @@ main() {
       delete_session "$session_name" "wf: delete '$session_name'? [y/N] "
       ;;
 
-    -s|-cs)
+    -s|-hs|-cs)
       if (( $# != 1 )); then
         echo "Usage: wf $command" >&2
         return 1
       fi
 
-      if [[ "$command" == "-s" ]]; then
-        split_current_pane
-      else
+      if [[ "$command" == "-cs" ]]; then
         close_current_pane
+      else
+        split_current_pane "$command"
       fi
       ;;
 

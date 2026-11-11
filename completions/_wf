@@ -18,6 +18,7 @@ _arguments -C \
   '-d[delete a tmux session]:session:_wf_sessions' \
   '-x[detach from the current tmux session]' \
   '-s[split the current pane into left and right panes]' \
+  '-hs[split the current pane into top and bottom panes]' \
   '-cs[close the focused pane unless it is the last pane]' \
   '-label[rename the current tmux window]:window name:' \
   '1:session:_wf_sessions'

@@ -36,7 +36,7 @@ Take me to the programming workspace, creating it if necessary.
 - List active sessions in a compact, alphabetized table
 - Show git repository branch and working tree status for child directories
 - Rename the current tmux window
-- Split the current pane into left and right panes
+- Split the current pane into left/right or top/bottom panes
 - Close the focused pane while protecting the last pane in a window
 - Detach from the current tmux session
 - Delete named sessions or the current session with confirmation
@@ -106,6 +106,7 @@ Expected output:
 | `wf -status` | Show branch and working tree status for git repositories in the current directory. |
 | `wf -x` | Detach from the current tmux session. |
 | `wf -s` | Split the current pane into left and right panes, opening and focusing the new pane in the current pane's directory. Only works inside tmux. |
+| `wf -hs` | Split the current pane into top and bottom panes, opening and focusing the new pane in the current pane's directory. Only works inside tmux. |
 | `wf -cs` | Close the focused pane and terminate programs running inside it. Refuses to close the last pane in a window. Only works inside tmux. |
 | `wf -d <session_name>` | Delete a named session after confirmation. |
 | `wf -d` | Delete the current session after confirmation. Only works from inside tmux. |
