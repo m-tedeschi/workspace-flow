@@ -273,7 +273,7 @@ split_current_pane() {
     return 1
   fi
 
-  if [[ "$command" == "-hs" ]]; then
+  if [[ "$command" == "-S" ]]; then
     direction="-v"
   fi
 
@@ -362,6 +362,32 @@ close_other_panes() {
   tmux kill-pane -a -t "$pane_id"
 }
 
+close_other_windows() {
+  local target_window
+  local -a target_args
+
+  if [[ -z "$TMUX" ]]; then
+    echo "wf: -caw must be run inside a tmux session" >&2
+    return 1
+  fi
+
+  if [[ -n "$TMUX_PANE" ]]; then
+    target_args=(-t "$TMUX_PANE")
+  fi
+
+  if ! target_window="$(tmux display-message -p "${target_args[@]}" '#{session_id}:#{window_id}')"; then
+    echo "wf: could not determine current window" >&2
+    return 1
+  fi
+
+  if [[ -z "$target_window" || "$target_window" == ":" ]]; then
+    echo "wf: could not determine current window" >&2
+    return 1
+  fi
+
+  tmux kill-window -a -t "$target_window"
+}
+
 create_window() {
   local command="$1"
   local directory="$PWD"
@@ -377,7 +403,7 @@ create_window() {
     return 0
   fi
 
-  if [[ "$command" == "-C" || "$command" == "-Cn" ]]; then
+  if [[ "$command" == "-N" ]]; then
     if ! directory="$(tmux display-message -p '#{?@wf_directory,#{@wf_directory},#{session_path}}')"; then
       echo "wf: could not determine workspace directory" >&2
       return 1
@@ -455,23 +481,15 @@ Commands:
       Detach from the current tmux session.
       Only works from inside tmux.
 
-  wf -c
-      Create and focus a window in the invoking shell's current directory.
-      Only works from inside tmux.
-
-  wf -C
-      Create and focus a window in the workspace's starting directory.
-      Only works from inside tmux.
-
-  wf -cn <n>
+  wf -n [n]
       Create n windows in the invoking shell's current directory.
-      n must be a whole number from 0 to 5. Zero creates no windows.
+      Defaults to 1. n must be a whole number from 0 to 5; 0 creates no windows.
       Focus the last new window.
       Only works from inside tmux.
 
-  wf -Cn <n>
+  wf -N [n]
       Create n windows in the workspace's starting directory.
-      n must be a whole number from 0 to 5. Zero creates no windows.
+      Defaults to 1. n must be a whole number from 0 to 5; 0 creates no windows.
       Focus the last new window.
       Only works from inside tmux.
 
@@ -485,7 +503,7 @@ Commands:
       Focus the new pane, starting in the current pane's directory.
       Only works from inside tmux.
 
-  wf -hs
+  wf -S
       Split the current pane into top and bottom panes.
       Focus the new pane, starting in the current pane's directory.
       Only works from inside tmux.
@@ -508,6 +526,10 @@ Commands:
   wf -ca
       Close all other panes in this window, terminating their programs.
       Keep the pane where this command is run. Only works inside tmux.
+
+  wf -caw
+      Close all other windows in this workspace, terminating their programs.
+      Keep the window where this command is run. Only works inside tmux.
 
   wf -label <window_name>
       Rename the current tmux window.
@@ -595,13 +617,13 @@ main() {
       delete_session "$session_name" "wf: delete '$session_name'? [y/N] "
       ;;
 
-    -cn|-Cn)
-      if (( $# != 2 )); then
-        echo "Usage: wf $command <n>" >&2
+    -n|-N)
+      if (( $# > 2 )); then
+        echo "Usage: wf $command [n]" >&2
         return 1
       fi
 
-      local count="$2"
+      local count="${2-1}"
       if [[ ! "$count" =~ '^[0-5]$' ]]; then
         echo "wf: window count must be a whole number from 0 to 5" >&2
         return 1
@@ -610,17 +632,13 @@ main() {
       create_window "$command" "$count"
       ;;
 
-    -c|-C|-cw)
+    -cw)
       if (( $# != 1 )); then
         echo "Usage: wf $command" >&2
         return 1
       fi
 
-      if [[ "$command" == "-cw" ]]; then
-        close_current_window
-      else
-        create_window "$command"
-      fi
+      close_current_window
       ;;
 
     -quad|-tri)
@@ -632,16 +650,20 @@ main() {
       create_pane_layout "$command"
       ;;
 
-    -ca)
+    -ca|-caw)
       if (( $# != 1 )); then
-        echo "Usage: wf -ca" >&2
+        echo "Usage: wf $command" >&2
         return 1
       fi
 
-      close_other_panes
+      if [[ "$command" == "-caw" ]]; then
+        close_other_windows
+      else
+        close_other_panes
+      fi
       ;;
 
-    -s|-hs|-cs)
+    -s|-S|-cs)
       if (( $# != 1 )); then
         echo "Usage: wf $command" >&2
         return 1

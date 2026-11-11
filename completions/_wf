@@ -18,16 +18,15 @@ _arguments -C \
   '-p[create or enter a workspace at a directory]:directory:_directories' \
   '-d[delete a tmux session]:session:_wf_sessions' \
   '-x[detach from the current tmux session]' \
-  '-c[create a window in the current directory]' \
-  '-C[create a window in the workspace starting directory]' \
-  '-cn[create windows in the current directory]:window count (0-5):(0 1 2 3 4 5)' \
-  '-Cn[create windows in the workspace starting directory]:window count (0-5):(0 1 2 3 4 5)' \
+  '-n[create windows in the current directory (default 1)]::window count (0-5):(0 1 2 3 4 5)' \
+  '-N[create windows in the workspace starting directory (default 1)]::window count (0-5):(0 1 2 3 4 5)' \
   '-cw[close the current window unless it is the last window]' \
   '-s[split the current pane into left and right panes]' \
-  '-hs[split the current pane into top and bottom panes]' \
+  '-S[split the current pane into top and bottom panes]' \
   '-quad[split a single-pane window into a numbered 2x2 grid]' \
   '-tri[create a full-height left pane and two stacked right panes]' \
   '-cs[close the focused pane unless it is the last pane]' \
   '-ca[close all other panes in the current window]' \
+  '-caw[close all other windows in the current workspace]' \
   '-label[rename the current tmux window]:window name:' \
   '1:session:_wf_sessions'
