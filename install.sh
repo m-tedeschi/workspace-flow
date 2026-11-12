@@ -47,6 +47,22 @@ install_zshrc_setup() {
   echo "  $ZSHRC"
 }
 
+install_prompt_setup() {
+  if [[ -f "$ZSHRC" ]] && grep -Eiq '^[[:space:]]*unsetopt[[:space:]]+PROMPT_SP([[:space:]]*(#.*)?)?$' "$ZSHRC"; then
+    return
+  fi
+
+  {
+    echo
+    echo '# Avoid partial-line markers and blank lines after tmux pane resizing.'
+    echo 'unsetopt PROMPT_SP'
+  } >> "$ZSHRC"
+
+  echo
+  echo "Disabled Zsh partial-line preservation in:"
+  echo "  $ZSHRC"
+}
+
 if [[ ! -f "$SOURCE" ]]; then
   echo "install: could not find '$SOURCE'" >&2
   exit 1
@@ -66,6 +82,7 @@ chmod +x "$DESTINATION"
 cp "$COMPLETION_SOURCE" "$COMPLETION_DESTINATION"
 
 install_zshrc_setup
+install_prompt_setup
 
 echo "Installed wf to:"
 echo "  $DESTINATION"

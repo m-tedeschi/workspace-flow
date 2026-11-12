@@ -79,6 +79,8 @@ It also installs the Zsh completion file to:
 
 If needed, the installer adds a managed setup block to `~/.zshrc` so `wf` is on your `PATH` and Zsh can find the completion file.
 
+It also adds `unsetopt PROMPT_SP` if it is not already present, preventing stray `%` markers and blank lines after tmux pane resizing. This disables Zsh's preservation of output without a trailing newline; the next prompt may overwrite that partial line.
+
 Restart your shell, or reload your shell configuration:
 
 ```sh
