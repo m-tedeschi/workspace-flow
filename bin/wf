@@ -302,7 +302,7 @@ create_pane_layout() {
   original_pane="$(tmux display-message -p '#{pane_id}')" || return 1
   directory="$(tmux display-message -p '#{pane_current_path}')" || return 1
 
-  if [[ "$command" == "-tri" ]]; then
+  if [[ "$command" == "-tri" || "$command" == "-t" ]]; then
     # Keep the left pane full-height and split the right half into two rows.
     new_pane="$(tmux split-window -h -d -P -F '#{pane_id}' -t "$original_pane" -c "$directory")" || return 1
     tmux split-window -v -d -t "$new_pane" -c "$directory" || return 1
@@ -461,17 +461,18 @@ wf - Workspace Flow
 
 Inside a workspace:
   wf -x                 Detach from the workspace.
-  wf -n [0-5]           New windows here; defaults to 1, 0 does nothing.
-  wf -N [0-5]           New windows at the workspace directory; defaults to 1.
+  wf -n [0-5]           New window(s) here; defaults to 1.
+  wf -N [0-5]           New window(s) at the workspace directory; defaults to 1.
   wf -s                 Split left/right in the current pane's directory.
   wf -S                 Split top/bottom in the current pane's directory.
-  wf -tri               Left 1, top right 2, bottom right 3; requires 1 pane.
-  wf -quad              2x2 grid numbered left to right, top to bottom; requires 1 pane.
-  wf -cs                Close this pane and its programs; protect the last pane.
+  wf -t, -tri           Left 1, top right 2, bottom right 3; requires 1 pane.
+  wf -q, -quad          2x2 grid layout; requires 1 pane.
+  wf -cs                Close this pane; protect the last pane.
   wf -cas               Close all other panes and their programs in this window.
   wf -cw                Close this window and its programs; protect the last window.
   wf -caw               Close all other windows and their programs in this workspace.
-  wf -label <name>      Rename the current window.
+  wf -l, -label <name>  Add a custom label to the current window.
+  wf -nl, -nolabel      Remove the custom label and resume automatic window naming.
 EOF
 }
 
@@ -505,21 +506,35 @@ main() {
       list_repo_statuses
       ;;
 
-    -label)
+    -l|-label)
       shift
       local window_label="$*"
 
       if [[ -z "$TMUX" ]]; then
-        echo "wf: -label must be run inside a tmux session" >&2
+        echo "wf: $command must be run inside a tmux session" >&2
         return 1
       fi
 
       if [[ -z "$window_label" ]]; then
-        echo "Usage: wf -label <window_name>" >&2
+        echo "Usage: wf $command <window_name>" >&2
         return 1
       fi
 
       tmux rename-window "$window_label"
+      ;;
+
+    -nl|-nolabel)
+      if (( $# != 1 )); then
+        echo "Usage: wf $command" >&2
+        return 1
+      fi
+
+      if [[ -z "$TMUX" ]]; then
+        echo "wf: $command must be run inside a tmux session" >&2
+        return 1
+      fi
+
+      tmux set-window-option automatic-rename on
       ;;
 
     -d)
@@ -572,7 +587,7 @@ main() {
       close_current_window
       ;;
 
-    -quad|-tri)
+    -q|-quad|-t|-tri)
       if (( $# != 1 )); then
         echo "Usage: wf $command" >&2
         return 1

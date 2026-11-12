@@ -24,9 +24,14 @@ _arguments -C \
   '-s[split the current pane into left and right panes]' \
   '-S[split the current pane into top and bottom panes]' \
   '-quad[split a single-pane window into a numbered 2x2 grid]' \
+  '-q[alias for -quad]' \
   '-tri[create a full-height left pane and two stacked right panes]' \
+  '-t[alias for -tri]' \
   '-cs[close the focused pane unless it is the last pane]' \
   '-cas[close all other panes in the current window]' \
   '-caw[close all other windows in the current workspace]' \
   '-label[rename the current tmux window]:window name:' \
+  '-l[alias for -label]:window name:' \
+  '-nolabel[remove the custom label and resume automatic window naming]' \
+  '-nl[alias for -nolabel]' \
   '1:session:_wf_sessions'

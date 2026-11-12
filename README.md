@@ -108,7 +108,8 @@ Expected output:
 | `wf .` | Create a workspace from the current directory. |
 | `wf ~` | Create or enter your home workspace. |
 | `wf -p <directory>` | Create or enter a workspace named after the directory, without changing the invoking shell's directory. Tab-completes directories. |
-| `wf -label <window_name>` | Rename the current tmux window. |
+| `wf -l <window_name>` / `wf -label <window_name>` | Rename the current tmux window. |
+| `wf -nl` / `wf -nolabel` | Remove the custom window label and resume tmux's automatic naming. Requires tmux. |
 | `wf -status` | Show branch and working tree status for git repositories in the current directory. |
 | `wf -x` | Detach from the current tmux session. |
 | `wf -n [n]` | Create n windows in the invoking shell's current directory and focus the last new window. Defaults to 1; accepts whole numbers from 0 to 5. Requires tmux; 0 creates no windows. |
@@ -116,8 +117,8 @@ Expected output:
 | `wf -cw` | Close the current window and all its panes, terminating their programs. Refuses to close the last window in a session. Only works inside tmux. |
 | `wf -s` | Split the current pane into left and right panes, opening and focusing the new pane in the current pane's directory. Only works inside tmux. |
 | `wf -S` | Split the current pane into top and bottom panes, opening and focusing the new pane in the current pane's directory. Only works inside tmux. |
-| `wf -quad` | Create a 2×2 grid: top left 1, top right 2, bottom left 3, bottom right 4. Requires tmux and exactly one pane in the current window. New panes use the original pane's directory; focuses pane 1 and sets pane numbering to start at 1 for this window. |
-| `wf -tri` | Create a full-height left pane (1), top right pane (2), and bottom right pane (3). Requires tmux and exactly one pane in the current window. New panes use the original pane's directory; focuses pane 1 and sets pane numbering to start at 1 for this window. |
+| `wf -q` / `wf -quad` | Create a 2×2 grid: top left 1, top right 2, bottom left 3, bottom right 4. Requires tmux and exactly one pane in the current window. New panes use the original pane's directory; focuses pane 1 and sets pane numbering to start at 1 for this window. |
+| `wf -t` / `wf -tri` | Create a full-height left pane (1), top right pane (2), and bottom right pane (3). Requires tmux and exactly one pane in the current window. New panes use the original pane's directory; focuses pane 1 and sets pane numbering to start at 1 for this window. |
 | `wf -cs` | Close the focused pane and terminate programs running inside it. Refuses to close the last pane in a window. Only works inside tmux. |
 | `wf -cas` | Close all other panes in the current window, terminating their programs. Keeps the pane where the command is run. Only works inside tmux; does nothing if it is already the only pane. |
 | `wf -caw` | Close all other windows in the current workspace, terminating their programs. Keeps the invoking window and all its panes. Requires tmux; does nothing if it is already the only window. |
