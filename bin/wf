@@ -446,6 +446,81 @@ close_current_window() {
   tmux kill-window
 }
 
+is_valid_resize_value() {
+  local value="$1"
+  local digits
+
+  if [[ "$value" =~ '^\+?(100|[0-9]{1,2})%$' ]]; then
+    digits="${value%\%}"
+    digits="${digits#+}"
+    (( 10#$digits >= 1 ))
+  else
+    [[ "$value" =~ '^[+-]?(100|[0-9]{1,2})$' ]]
+  fi
+}
+
+resize_current_pane() {
+  local x="$1" y="$2"
+  local pane_id pane_count pane_width pane_height extra info
+  local value digits amount target dimension
+  local -a target_args resize_args
+
+  if ! is_valid_resize_value "$x" || ! is_valid_resize_value "$y"; then
+    echo "wf: x and y must be integers from -100 to 100 or absolute percentages from 1% to 100%" >&2
+    return 1
+  fi
+
+  if [[ -z "$TMUX" ]]; then
+    echo "wf: -r must be run inside a tmux session" >&2
+    return 1
+  fi
+
+  if [[ -n "$TMUX_PANE" ]]; then
+    target_args=(-t "$TMUX_PANE")
+  fi
+  if ! info="$(tmux display-message -p "${target_args[@]}" '#{pane_id} #{window_panes} #{pane_width} #{pane_height}')"; then
+    echo "wf: could not determine current pane dimensions" >&2
+    return 1
+  fi
+  read -r pane_id pane_count pane_width pane_height extra <<< "$info"
+  if [[ -z "$pane_id" || "$pane_count" != <-> || "$pane_width" != <-> || "$pane_height" != <-> || -n "$extra" ]]; then
+    echo "wf: could not determine current pane dimensions" >&2
+    return 1
+  fi
+
+  for dimension in x y; do
+    if [[ "$dimension" == x ]]; then
+      value="$x"
+      target="$pane_width"
+    else
+      value="$y"
+      target="$pane_height"
+    fi
+
+    if [[ "$value" == *% ]]; then
+      digits="${value%\%}"
+      digits="${digits#+}"
+      resize_args+=("-$dimension" "$(( 10#$digits ))%")
+    else
+      digits="${value#[+-]}"
+      amount=$(( 10#$digits ))
+      [[ "$value" == -* ]] && amount=$(( -amount ))
+      (( amount == 0 )) && continue
+      target=$(( target + amount ))
+      (( target < 1 )) && target=1
+      resize_args+=("-$dimension" "$target")
+    fi
+  done
+
+  (( ${#resize_args} == 0 )) && return 0
+  if (( pane_count < 2 )); then
+    echo "wf: -r requires at least 2 panes in the current window" >&2
+    return 1
+  fi
+
+  tmux resize-pane -t "$pane_id" "${resize_args[@]}"
+}
+
 show_help() {
   cat <<'EOF'
 wf - Workspace Flow
@@ -465,6 +540,7 @@ Inside a workspace:
   wf -N [0-5]           New window(s) at the workspace directory; defaults to 1.
   wf -s                 Split left/right in the current pane's directory.
   wf -S                 Split top/bottom in the current pane's directory.
+  wf -r <x> <y>         Resize: cells -100..100, absolute sizes 1%..100%; 0 keeps size.
   wf -t, -tri           Left 1, top right 2, bottom right 3; requires 1 pane.
   wf -q, -quad          2x2 grid layout; requires 1 pane.
   wf -cs                Close this pane; protect the last pane.
@@ -504,6 +580,15 @@ main() {
       fi
 
       list_repo_statuses
+      ;;
+
+    -r)
+      if (( $# != 3 )); then
+        echo "Usage: wf -r <x> <y>" >&2
+        return 1
+      fi
+
+      resize_current_pane "$2" "$3"
       ;;
 
     -l|-label)

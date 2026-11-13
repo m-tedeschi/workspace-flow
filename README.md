@@ -117,6 +117,7 @@ Expected output:
 | `wf -cw` | Close the current window and all its panes, terminating their programs. Refuses to close the last window in a session. Only works inside tmux. |
 | `wf -s` | Split the current pane into left and right panes, opening and focusing the new pane in the current pane's directory. Only works inside tmux. |
 | `wf -S` | Split the current pane into top and bottom panes, opening and focusing the new pane in the current pane's directory. Only works inside tmux. |
+| `wf -r <x> <y>` | Resize the invoking pane: integers from -100 to 100 adjust width/height in cells; percentages from 1% to 100% set absolute sizes relative to the window. Plain 0 leaves a dimension unchanged. Requires tmux and at least two panes for a size change. |
 | `wf -q` / `wf -quad` | Create a 2×2 grid: top left 1, top right 2, bottom left 3, bottom right 4. Requires tmux and exactly one pane in the current window. New panes use the original pane's directory; focuses pane 1 and sets pane numbering to start at 1 for this window. |
 | `wf -t` / `wf -tri` | Create a full-height left pane (1), top right pane (2), and bottom right pane (3). Requires tmux and exactly one pane in the current window. New panes use the original pane's directory; focuses pane 1 and sets pane numbering to start at 1 for this window. |
 | `wf -cs` | Close the focused pane and terminate programs running inside it. Refuses to close the last pane in a window. Only works inside tmux. |
@@ -133,6 +134,8 @@ Session names may only contain letters, numbers, `_`, and `-`. Session names mus
 `wf -p` accepts relative paths, absolute paths, `~`, and quoted paths with spaces, such as `wf -p "~/dev/My Project"`. Paths are resolved to their physical directory before deriving the session name. New workspaces start with one window and remember that directory for `-N`. Existing workspaces are entered only when their saved directory (or tmux's session starting directory for older sessions) matches; a same-named workspace at another path produces an error.
 
 New workspaces remember the directory where they were created (`wf ~` uses the home directory). `wf -N` returns to that directory even after you change directories in a pane. For existing sessions without a saved workspace directory, it uses tmux's session starting directory. If that directory no longer exists, the command reports an error.
+
+Resize examples: `wf -r 10 0` grows the pane by 10 columns; `wf -r -5 3` shrinks width by 5 columns and grows height by 3 rows; `wf -r 60% 50%` sets width and height to 60% and 50% of the window. Values may be mixed (`wf -r 60% -3`), and positive values accept an optional `+`. Negative percentages, 0%, decimals, and out-of-range values are rejected. `wf -r 0 0` does nothing. tmux rounds percentages to cells and limits resizing to what the layout permits.
 
 ## Future Improvements
 

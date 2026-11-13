@@ -23,6 +23,7 @@ _arguments -C \
   '-cw[close the current window unless it is the last window]' \
   '-s[split the current pane into left and right panes]' \
   '-S[split the current pane into top and bottom panes]' \
+  '-r[resize the current pane]:width change (-100..100) or absolute width (1%..100%): :height change (-100..100) or absolute height (1%..100%): ' \
   '-quad[split a single-pane window into a numbered 2x2 grid]' \
   '-q[alias for -quad]' \
   '-tri[create a full-height left pane and two stacked right panes]' \
