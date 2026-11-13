@@ -110,7 +110,7 @@ Expected output:
 | `wf -p <directory>` | Create or enter a workspace named after the directory, without changing the invoking shell's directory. Tab-completes directories. |
 | `wf -l <window_name>` / `wf -label <window_name>` | Rename the current tmux window. |
 | `wf -nl` / `wf -nolabel` | Remove the custom window label and resume tmux's automatic naming. Requires tmux. |
-| `wf -status` | Show branch and working tree status for git repositories in the current directory. |
+| `wf -git` | Show branch and working tree status for git repositories in the current directory. |
 | `wf -x` | Detach from the current tmux session. |
 | `wf -n [n]` | Create n windows in the invoking shell's current directory and focus the last new window. Defaults to 1; accepts whole numbers from 0 to 5. Requires tmux; 0 creates no windows. |
 | `wf -N [n]` | Create n windows in the workspace's starting directory and focus the last new window. Defaults to 1; accepts whole numbers from 0 to 5. Requires tmux; 0 creates no windows. |

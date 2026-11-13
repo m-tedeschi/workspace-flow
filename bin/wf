@@ -456,7 +456,7 @@ wf - Workspace Flow
   wf ~                  Create or enter a workspace in your home directory.
   wf -p <directory>     Create or enter a workspace at a path; reject name conflicts.
   wf -d [name]          Confirm and delete a workspace; defaults to current workspace.
-  wf -status            Show Git branch and changes for child directories.
+  wf -git               Show Git branch and changes for child directories.
   wf --help, -h         Show this help.
 
 Inside a workspace:
@@ -497,9 +497,9 @@ main() {
       create_or_enter_path_session "$2"
       ;;
 
-    -status)
+    -git)
       if (( $# != 1 )); then
-        echo "Usage: wf -status" >&2
+        echo "Usage: wf -git" >&2
         return 1
       fi
 
