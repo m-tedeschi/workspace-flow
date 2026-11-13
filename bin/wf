@@ -457,8 +457,8 @@ reset_pane_layout() {
     return 1
   fi
 
-  [[ "$command" == "-rt" ]] && expected_count=3
-  [[ "$command" == "-rd" ]] && expected_count=2
+  [[ "$command" == "-rt" || "$command" == "-r3" ]] && expected_count=3
+  [[ "$command" == "-rd" || "$command" == "-r2" ]] && expected_count=2
   if [[ -n "$TMUX_PANE" ]]; then
     target_args=(-t "$TMUX_PANE")
   fi
@@ -476,7 +476,7 @@ reset_pane_layout() {
     return 1
   fi
 
-  if [[ "$command" == "-rd" ]]; then
+  if [[ "$command" == "-rd" || "$command" == "-r2" ]]; then
     positions="$(tmux list-panes -t "$window_id" -F '#{pane_top}')" || return 1
     pane_tops=("${(@f)positions}")
     if (( ${#pane_tops} != 2 )) || [[ "$pane_tops[1]" != <-> || "$pane_tops[2]" != <-> ]]; then
@@ -489,7 +489,7 @@ reset_pane_layout() {
       layout=even-vertical
     fi
     tmux select-layout -t "$window_id" "$layout" >/dev/null || return 1
-  elif [[ "$command" == "-rq" ]]; then
+  elif [[ "$command" == "-rq" || "$command" == "-r4" ]]; then
     tmux select-layout -t "$window_id" tiled >/dev/null || return 1
   else
     pane_ids="$(tmux list-panes -t "$window_id" -F '#{pane_id}')" || return 1
@@ -598,9 +598,9 @@ Inside a workspace:
   wf -s                 Split left/right in the current pane's directory.
   wf -S                 Split top/bottom in the current pane's directory.
   wf -r <x> <y>         Resize: cells -100..100, absolute sizes 1%..100%; 0 keeps size.
-  wf -rd                Reset 2 panes to equal sizes; keep orientation, panes and focus.
-  wf -rq                Reset 4 panes to an equal 2x2 grid; keep panes and focus.
-  wf -rt                Reset 3 panes to half-width left and stacked right; keep focus.
+  wf -r2, -rd           Reset 2 panes to equal sizes; keep orientation, panes and focus.
+  wf -r4, -rq           Reset 4 panes to an equal 2x2 grid; keep panes and focus.
+  wf -r3, -rt           Reset 3 panes to half-width left and stacked right; keep focus.
   wf -t, -tri           Left 1, top right 2, bottom right 3; requires 1 pane.
   wf -q, -quad          2x2 grid layout; requires 1 pane.
   wf -cs                Close this pane; protect the last pane.
@@ -642,7 +642,7 @@ main() {
       list_repo_statuses
       ;;
 
-    -rd|-rq|-rt)
+    -rd|-rq|-rt|-r2|-r3|-r4)
       if (( $# != 1 )); then
         echo "Usage: wf $command" >&2
         return 1

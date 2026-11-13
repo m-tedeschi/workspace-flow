@@ -118,9 +118,9 @@ Expected output:
 | `wf -s` | Split the current pane into left and right panes, opening and focusing the new pane in the current pane's directory. Only works inside tmux. |
 | `wf -S` | Split the current pane into top and bottom panes, opening and focusing the new pane in the current pane's directory. Only works inside tmux. |
 | `wf -r <x> <y>` | Resize the invoking pane: integers from -100 to 100 adjust width/height in cells; percentages from 1% to 100% set absolute sizes relative to the window. Plain 0 leaves a dimension unchanged. Requires tmux and at least two panes for a size change. |
-| `wf -rq` | Reset exactly four panes to an equal 2×2 grid, numbered 1 2 / 3 4. Preserves panes, programs, and focus. Requires tmux. |
-| `wf -rd` | Reset exactly two panes to equal sizes, preserving left/right or top/bottom orientation, panes, programs, and focus. Requires tmux. |
-| `wf -rt` | Reset exactly three panes to a half-width left pane (1) and equal-height right panes (2 above 3). Preserves panes, programs, and focus. Requires tmux. |
+| `wf -r4` / `wf -rq` | Reset exactly four panes to an equal 2×2 grid, numbered 1 2 / 3 4. Preserves panes, programs, and focus. Requires tmux. |
+| `wf -r2` / `wf -rd` | Reset exactly two panes to equal sizes, preserving left/right or top/bottom orientation, panes, programs, and focus. Requires tmux. |
+| `wf -r3` / `wf -rt` | Reset exactly three panes to a half-width left pane (1) and equal-height right panes (2 above 3). Preserves panes, programs, and focus. Requires tmux. |
 | `wf -q` / `wf -quad` | Create a 2×2 grid: top left 1, top right 2, bottom left 3, bottom right 4. Requires tmux and exactly one pane in the current window. New panes use the original pane's directory; focuses pane 1 and sets pane numbering to start at 1 for this window. |
 | `wf -t` / `wf -tri` | Create a full-height left pane (1), top right pane (2), and bottom right pane (3). Requires tmux and exactly one pane in the current window. New panes use the original pane's directory; focuses pane 1 and sets pane numbering to start at 1 for this window. |
 | `wf -cs` | Close the focused pane and terminate programs running inside it. Refuses to close the last pane in a window. Only works inside tmux. |

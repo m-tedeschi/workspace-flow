@@ -27,6 +27,9 @@ _arguments -C \
   '-rq[reset exactly four panes to an equal 2x2 grid]' \
   '-rd[reset exactly two panes to equal sizes, preserving orientation]' \
   '-rt[reset exactly three panes to a half-width left pane and stacked right panes]' \
+  '-r2[alias for -rd]' \
+  '-r3[alias for -rt]' \
+  '-r4[alias for -rq]' \
   '-quad[split a single-pane window into a numbered 2x2 grid]' \
   '-q[alias for -quad]' \
   '-tri[create a full-height left pane and two stacked right panes]' \
