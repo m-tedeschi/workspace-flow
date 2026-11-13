@@ -449,8 +449,8 @@ close_current_window() {
 reset_pane_layout() {
   local command="$1"
   local expected_count=4
-  local pane_count window_id window_width info extra pane_ids main_pane main_width
-  local -a target_args
+  local pane_count window_id window_width info extra pane_ids main_pane main_width positions layout
+  local -a target_args pane_tops
 
   if [[ -z "$TMUX" ]]; then
     echo "wf: $command must be run inside a tmux session" >&2
@@ -458,6 +458,7 @@ reset_pane_layout() {
   fi
 
   [[ "$command" == "-rt" ]] && expected_count=3
+  [[ "$command" == "-rd" ]] && expected_count=2
   if [[ -n "$TMUX_PANE" ]]; then
     target_args=(-t "$TMUX_PANE")
   fi
@@ -475,7 +476,20 @@ reset_pane_layout() {
     return 1
   fi
 
-  if [[ "$command" == "-rq" ]]; then
+  if [[ "$command" == "-rd" ]]; then
+    positions="$(tmux list-panes -t "$window_id" -F '#{pane_top}')" || return 1
+    pane_tops=("${(@f)positions}")
+    if (( ${#pane_tops} != 2 )) || [[ "$pane_tops[1]" != <-> || "$pane_tops[2]" != <-> ]]; then
+      echo "wf: could not determine pane orientation" >&2
+      return 1
+    fi
+    if [[ "$pane_tops[1]" == "$pane_tops[2]" ]]; then
+      layout=even-horizontal
+    else
+      layout=even-vertical
+    fi
+    tmux select-layout -t "$window_id" "$layout" >/dev/null || return 1
+  elif [[ "$command" == "-rq" ]]; then
     tmux select-layout -t "$window_id" tiled >/dev/null || return 1
   else
     pane_ids="$(tmux list-panes -t "$window_id" -F '#{pane_id}')" || return 1
@@ -584,6 +598,7 @@ Inside a workspace:
   wf -s                 Split left/right in the current pane's directory.
   wf -S                 Split top/bottom in the current pane's directory.
   wf -r <x> <y>         Resize: cells -100..100, absolute sizes 1%..100%; 0 keeps size.
+  wf -rd                Reset 2 panes to equal sizes; keep orientation, panes and focus.
   wf -rq                Reset 4 panes to an equal 2x2 grid; keep panes and focus.
   wf -rt                Reset 3 panes to half-width left and stacked right; keep focus.
   wf -t, -tri           Left 1, top right 2, bottom right 3; requires 1 pane.
@@ -627,7 +642,7 @@ main() {
       list_repo_statuses
       ;;
 
-    -rq|-rt)
+    -rd|-rq|-rt)
       if (( $# != 1 )); then
         echo "Usage: wf $command" >&2
         return 1

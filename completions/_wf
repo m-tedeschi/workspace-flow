@@ -25,6 +25,7 @@ _arguments -C \
   '-S[split the current pane into top and bottom panes]' \
   '-r[resize the current pane]:width change (-100..100) or absolute width (1%..100%): :height change (-100..100) or absolute height (1%..100%): ' \
   '-rq[reset exactly four panes to an equal 2x2 grid]' \
+  '-rd[reset exactly two panes to equal sizes, preserving orientation]' \
   '-rt[reset exactly three panes to a half-width left pane and stacked right panes]' \
   '-quad[split a single-pane window into a numbered 2x2 grid]' \
   '-q[alias for -quad]' \
