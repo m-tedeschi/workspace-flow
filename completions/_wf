@@ -23,6 +23,8 @@ _arguments -C \
   '-cw[close the current window unless it is the last window]' \
   '-s[split the current pane into left and right panes]' \
   '-S[split the current pane into top and bottom panes]' \
+  '-max[toggle pane zoom and restore the previous layout]' \
+  '-m[alias for -max]' \
   '-r[resize the current pane]:width change (-100..100) or absolute width (1%..100%): :height change (-100..100) or absolute height (1%..100%): ' \
   '-rq[reset exactly four panes to an equal 2x2 grid]' \
   '-rd[reset exactly two panes to equal sizes, preserving orientation]' \

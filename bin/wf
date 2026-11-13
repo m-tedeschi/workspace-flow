@@ -597,6 +597,7 @@ Inside a workspace:
   wf -N [0-5]           New window(s) at the workspace directory; defaults to 1.
   wf -s                 Split left/right in the current pane's directory.
   wf -S                 Split top/bottom in the current pane's directory.
+  wf -m, -max           Toggle pane zoom; restore the previous layout when unzoomed.
   wf -r <x> <y>         Resize: cells -100..100, absolute sizes 1%..100%; 0 keeps size.
   wf -r2, -rd           Reset 2 panes to equal sizes; keep orientation, panes and focus.
   wf -r4, -rq           Reset 4 panes to an equal 2x2 grid; keep panes and focus.
@@ -649,6 +650,24 @@ main() {
       fi
 
       reset_pane_layout "$command"
+      ;;
+
+    -m|-max)
+      if (( $# != 1 )); then
+        echo "Usage: wf $command" >&2
+        return 1
+      fi
+
+      if [[ -z "$TMUX" ]]; then
+        echo "wf: $command must be run inside a tmux session" >&2
+        return 1
+      fi
+
+      local -a zoom_target
+      if [[ -n "$TMUX_PANE" ]]; then
+        zoom_target=(-t "$TMUX_PANE")
+      fi
+      tmux resize-pane -Z "${zoom_target[@]}"
       ;;
 
     -r)
