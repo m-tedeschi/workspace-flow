@@ -446,6 +446,49 @@ close_current_window() {
   tmux kill-window
 }
 
+reset_pane_layout() {
+  local command="$1"
+  local expected_count=4
+  local pane_count window_id window_width info extra pane_ids main_pane main_width
+  local -a target_args
+
+  if [[ -z "$TMUX" ]]; then
+    echo "wf: $command must be run inside a tmux session" >&2
+    return 1
+  fi
+
+  [[ "$command" == "-rt" ]] && expected_count=3
+  if [[ -n "$TMUX_PANE" ]]; then
+    target_args=(-t "$TMUX_PANE")
+  fi
+  if ! info="$(tmux display-message -p "${target_args[@]}" '#{window_id} #{window_panes} #{window_width}')"; then
+    echo "wf: could not determine current window" >&2
+    return 1
+  fi
+  read -r window_id pane_count window_width extra <<< "$info"
+  if [[ -z "$window_id" || "$pane_count" != <-> || "$window_width" != <-> || -n "$extra" ]]; then
+    echo "wf: could not determine current window" >&2
+    return 1
+  fi
+  if (( pane_count != expected_count )); then
+    echo "wf: $command requires exactly $expected_count panes in the current window" >&2
+    return 1
+  fi
+
+  if [[ "$command" == "-rq" ]]; then
+    tmux select-layout -t "$window_id" tiled >/dev/null || return 1
+  else
+    pane_ids="$(tmux list-panes -t "$window_id" -F '#{pane_id}')" || return 1
+    main_pane="${${(f)pane_ids}[1]}"
+    [[ -n "$main_pane" ]] || return 1
+    # Exclude the separator column, giving the left pane half of usable width.
+    main_width=$(( (window_width - 1) / 2 ))
+    tmux select-layout -t "$window_id" main-vertical >/dev/null || return 1
+    tmux resize-pane -t "$main_pane" -x "$main_width" || return 1
+  fi
+  tmux set-option -w -t "$window_id" pane-base-index 1
+}
+
 is_valid_resize_value() {
   local value="$1"
   local digits
@@ -541,6 +584,8 @@ Inside a workspace:
   wf -s                 Split left/right in the current pane's directory.
   wf -S                 Split top/bottom in the current pane's directory.
   wf -r <x> <y>         Resize: cells -100..100, absolute sizes 1%..100%; 0 keeps size.
+  wf -rq                Reset 4 panes to an equal 2x2 grid; keep panes and focus.
+  wf -rt                Reset 3 panes to half-width left and stacked right; keep focus.
   wf -t, -tri           Left 1, top right 2, bottom right 3; requires 1 pane.
   wf -q, -quad          2x2 grid layout; requires 1 pane.
   wf -cs                Close this pane; protect the last pane.
@@ -580,6 +625,15 @@ main() {
       fi
 
       list_repo_statuses
+      ;;
+
+    -rq|-rt)
+      if (( $# != 1 )); then
+        echo "Usage: wf $command" >&2
+        return 1
+      fi
+
+      reset_pane_layout "$command"
       ;;
 
     -r)
