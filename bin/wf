@@ -316,6 +316,36 @@ create_pane_layout() {
   tmux select-pane -t "$original_pane"
 }
 
+break_current_pane() {
+  local command="$1"
+  local info pane_id pane_count session_id extra
+  local -a target_args
+
+  if [[ -z "$TMUX" ]]; then
+    echo "wf: $command must be run inside a tmux session" >&2
+    return 1
+  fi
+
+  if [[ -n "$TMUX_PANE" ]]; then
+    target_args=(-t "$TMUX_PANE")
+  fi
+  if ! info="$(tmux display-message -p "${target_args[@]}" '#{pane_id} #{window_panes} #{session_id}')"; then
+    echo "wf: could not determine current pane" >&2
+    return 1
+  fi
+  read -r pane_id pane_count session_id extra <<< "$info"
+  if [[ -z "$pane_id" || "$pane_count" != <-> || -z "$session_id" || -n "$extra" ]]; then
+    echo "wf: could not determine current pane" >&2
+    return 1
+  fi
+  if (( pane_count < 2 )); then
+    echo "wf: $command requires at least 2 panes in the current window" >&2
+    return 1
+  fi
+
+  tmux break-pane -s "$pane_id" -t "$session_id:"
+}
+
 close_current_pane() {
   local pane_count
 
@@ -598,6 +628,7 @@ Inside a workspace:
   wf -s                 Split left/right in the current pane's directory.
   wf -S                 Split top/bottom in the current pane's directory.
   wf -m, -max           Toggle pane zoom; restore the previous layout when unzoomed.
+  wf -b, -break         Move this pane to a new window and follow it; requires 2+ panes.
   wf -r <x> <y>         Resize: cells -100..100, absolute sizes 1%..100%; 0 keeps size.
   wf -r2, -rd           Reset 2 panes to equal sizes; keep orientation, panes and focus.
   wf -r4, -rq           Reset 4 panes to an equal 2x2 grid; keep panes and focus.
@@ -650,6 +681,15 @@ main() {
       fi
 
       reset_pane_layout "$command"
+      ;;
+
+    -b|-break)
+      if (( $# != 1 )); then
+        echo "Usage: wf $command" >&2
+        return 1
+      fi
+
+      break_current_pane "$command"
       ;;
 
     -m|-max)

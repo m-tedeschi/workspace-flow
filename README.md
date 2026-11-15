@@ -118,6 +118,7 @@ Expected output:
 | `wf -s` | Split the current pane into left and right panes, opening and focusing the new pane in the current pane's directory. Only works inside tmux. |
 | `wf -S` | Split the current pane into top and bottom panes, opening and focusing the new pane in the current pane's directory. Only works inside tmux. |
 | `wf -m` / `wf -max` | Toggle zoom on the invoking pane to fill the window. Toggle again to restore the previous layout and pane sizes. Other panes keep running. Requires tmux. |
+| `wf -b` / `wf -break` | Move the invoking pane into its own new window in the same workspace and follow it. Preserves the running program and directory. Requires tmux and at least two panes in the source window. |
 | `wf -r <x> <y>` | Resize the invoking pane: integers from -100 to 100 adjust width/height in cells; percentages from 1% to 100% set absolute sizes relative to the window. Plain 0 leaves a dimension unchanged. Requires tmux and at least two panes for a size change. |
 | `wf -r4` / `wf -rq` | Reset exactly four panes to an equal 2×2 grid, numbered 1 2 / 3 4. Preserves panes, programs, and focus. Requires tmux. |
 | `wf -r2` / `wf -rd` | Reset exactly two panes to equal sizes, preserving left/right or top/bottom orientation, panes, programs, and focus. Requires tmux. |
