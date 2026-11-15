@@ -91,7 +91,7 @@ create_default_session_in_directory() {
   local session_name="$1"
   local directory="$2"
 
-  tmux new-session -d -s "$session_name" -c "$directory" &&
+  tmux new-session -d -s "$session_name" -n Main -c "$directory" &&
     tmux set-option -t "=$session_name:" @wf_directory "$directory"
 }
 

@@ -12,7 +12,7 @@ Instead of remembering whether a session already exists, run:
 wf myproject
 ```
 
-If the session exists, `wf` enters it. If it does not exist, `wf` creates it with one window and enters it.
+If the session exists, `wf` enters it. If it does not exist, `wf` creates it with one window named `Main` and enters it.
 
 The command describes intent rather than tmux mechanics:
 
