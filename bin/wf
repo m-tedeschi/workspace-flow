@@ -579,6 +579,65 @@ close_current_window() {
   tmux kill-window
 }
 
+focus_current_pane() {
+  local command="$1"
+  local info pane_id window_id zoomed extra panes candidate left top width height
+  local primary_pane primary_left primary_top pane_count
+  local -a target_args
+
+  if [[ -z "$TMUX" ]]; then
+    echo "wf: $command must be run inside a tmux session" >&2
+    return 1
+  fi
+  if [[ -n "$TMUX_PANE" ]]; then
+    target_args=(-t "$TMUX_PANE")
+  fi
+  if ! info="$(tmux display-message -p "${target_args[@]}" '#{pane_id} #{window_id} #{window_zoomed_flag} #{window_panes}')"; then
+    echo "wf: could not determine current pane" >&2
+    return 1
+  fi
+  read -r pane_id window_id zoomed pane_count extra <<< "$info"
+  if [[ -z "$pane_id" || -z "$window_id" || "$zoomed" != [01] || "$pane_count" != <-> || -n "$extra" ]]; then
+    echo "wf: could not determine current pane" >&2
+    return 1
+  fi
+  (( pane_count == 1 )) && return 0
+  if (( pane_count < 2 || pane_count > 4 )); then
+    echo "wf: $command requires 2, 3, or 4 panes to reset the layout" >&2
+    return 1
+  fi
+
+  # Reset the underlying layout, restoring zoom even if a command fails.
+  if [[ "$zoomed" == 1 ]]; then
+    tmux resize-pane -Z -t "$pane_id" || return 1
+  fi
+  {
+    local TMUX_PANE="$pane_id"
+    reset_pane_layout "-r$pane_count" || return 1
+    panes="$(tmux list-panes -t "$window_id" -F '#{pane_id} #{pane_left} #{pane_top} #{pane_width} #{pane_height}')" || return 1
+    while read -r candidate left top width height extra; do
+      if [[ -z "$candidate" || "$left" != <-> || "$top" != <-> || "$width" != <-> || "$height" != <-> || -n "$extra" ]]; then
+        echo "wf: could not determine pane layout" >&2
+        return 1
+      fi
+      if [[ -z "$primary_pane" ]] || (( top < primary_top || (top == primary_top && left < primary_left) )); then
+        primary_pane="$candidate"
+        primary_left="$left"
+        primary_top="$top"
+      fi
+    done <<< "$panes"
+
+    if [[ "$primary_pane" != "$pane_id" ]]; then
+      tmux swap-pane -s "$pane_id" -t "$primary_pane" || return 1
+      tmux select-pane -t "$pane_id" || return 1
+    fi
+  } always {
+    if [[ "$zoomed" == 1 ]]; then
+      tmux resize-pane -Z -t "$pane_id"
+    fi
+  }
+}
+
 reset_pane_layout() {
   local command="$1"
   local expected_count=4
@@ -731,6 +790,7 @@ Inside a workspace:
   wf -s                 Split left/right in the current pane's directory.
   wf -S                 Split top/bottom in the current pane's directory.
   wf -m, -max           Toggle pane zoom; restore the previous layout when unzoomed.
+  wf -f, -focus         Reset 2–4 pane layouts and move this pane into the primary slot.
   wf -b, -break         Move this pane to a new window and follow it; requires 2+ panes.
   wf -j, -join <dest>   Move this pane into another window here (number or exact name).
   wf -r <x> <y>         Resize: cells -100..100, absolute sizes 1%..100%; 0 keeps size.
@@ -803,6 +863,15 @@ main() {
       fi
 
       break_current_pane "$command"
+      ;;
+
+    -f|-focus)
+      if (( $# != 1 )); then
+        echo "Usage: wf $command" >&2
+        return 1
+      fi
+
+      focus_current_pane "$command"
       ;;
 
     -m|-max)

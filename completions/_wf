@@ -31,6 +31,8 @@ _arguments -C \
   '-S[split the current pane into top and bottom panes]' \
   '-max[toggle pane zoom and restore the previous layout]' \
   '-m[alias for -max]' \
+  '-focus[reset the layout and move the current pane into the primary position]' \
+  '-f[alias for -focus]' \
   '-break[move the current pane to a new window and follow it]' \
   '-b[alias for -break]' \
   '-join[move the current pane into another workspace window]:destination window:_wf_windows' \
