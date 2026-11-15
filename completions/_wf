@@ -12,6 +12,12 @@ _wf_sessions() {
   fi
 }
 
+_wf_windows() {
+  local -a windows
+  windows=("${(@f)$(tmux list-windows -F '#{window_index}' 2>/dev/null)}")
+  _describe -t windows 'destination window' windows
+}
+
 _arguments -C \
   '(-h --help)'{-h,--help}'[display help]' \
   '-git[show git repository statuses in the current directory]' \
@@ -27,6 +33,8 @@ _arguments -C \
   '-m[alias for -max]' \
   '-break[move the current pane to a new window and follow it]' \
   '-b[alias for -break]' \
+  '-join[move the current pane into another workspace window]:destination window:_wf_windows' \
+  '-j[alias for -join]:destination window:_wf_windows' \
   '-r[resize the current pane]:width change (-100..100) or absolute width (1%..100%): :height change (-100..100) or absolute height (1%..100%): ' \
   '-rq[reset exactly four panes to an equal 2x2 grid]' \
   '-rd[reset exactly two panes to equal sizes, preserving orientation]' \
