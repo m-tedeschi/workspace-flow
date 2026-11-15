@@ -119,7 +119,7 @@ Expected output:
 | `wf -S` | Split the current pane into top and bottom panes, opening and focusing the new pane in the current pane's directory. Only works inside tmux. |
 | `wf -m` / `wf -max` | Toggle zoom on the invoking pane to fill the window. Toggle again to restore the previous layout and pane sizes. Other panes keep running. Requires tmux. |
 | `wf -b` / `wf -break` | Move the invoking pane into its own new window in the same workspace and follow it. Preserves the running program and directory. Requires tmux and at least two panes in the source window. |
-| `wf -j <destination>` / `wf -join <destination>` | Move the invoking pane into another window in the current workspace, using its number or exact name. Joins to the right of that window's active pane and follows the moved pane. Preserves its program and directory; an empty source window disappears. Requires tmux. Invalid, ambiguous, and same-window destinations are rejected without moving the pane. |
+| `wf -j <destination>` / `wf -join <destination>` | Move the invoking pane into another window in the current workspace, using its number or exact name, and follow it. Placement adapts to the destination layout (see below). Preserves its program and directory; an empty source window disappears. Requires tmux. Invalid, ambiguous, and same-window destinations are rejected without moving the pane. |
 | `wf -r <x> <y>` | Resize the invoking pane: integers from -100 to 100 adjust width/height in cells; percentages from 1% to 100% set absolute sizes relative to the window. Plain 0 leaves a dimension unchanged. Requires tmux and at least two panes for a size change. |
 | `wf -r4` / `wf -rq` | Reset exactly four panes to an equal 2×2 grid, numbered 1 2 / 3 4. Preserves panes, programs, and focus. Requires tmux. |
 | `wf -r2` / `wf -rd` | Reset exactly two panes to equal sizes, preserving left/right or top/bottom orientation, panes, programs, and focus. Requires tmux. |
@@ -142,6 +142,14 @@ Session names may only contain letters, numbers, `_`, and `-`. Session names mus
 New workspaces remember the directory where they were created (`wf ~` uses the home directory). `wf -N` returns to that directory even after you change directories in a pane. For existing sessions without a saved workspace directory, it uses tmux's session starting directory. If that directory no longer exists, the command reports an error.
 
 Resize examples: `wf -r 10 0` grows the pane by 10 columns; `wf -r -5 3` shrinks width by 5 columns and grows height by 3 rows; `wf -r 60% 50%` sets width and height to 60% and 50% of the window. Values may be mixed (`wf -r 60% -3`), and positive values accept an optional `+`. Negative percentages, 0%, decimals, and out-of-range values are rejected. `wf -r 0 0` does nothing. tmux rounds percentages to cells and limits resizing to what the layout permits.
+
+Joining adapts to the destination's existing panes, regardless of which pane was active:
+
+- One pane: split left/right, with the incoming pane on the right.
+- Two side-by-side panes: split the right pane top/bottom, with the incoming pane at bottom right.
+- Two stacked panes: split the bottom pane left/right, with the incoming pane at bottom right.
+- Three panes: arrange all four into an equal 2×2 grid, with the incoming pane at bottom right.
+- Four or more panes: split the active destination pane left/right, placing the incoming pane on its right.
 
 ## Future Improvements
 

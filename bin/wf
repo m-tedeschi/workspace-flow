@@ -350,7 +350,8 @@ join_current_pane() {
   local command="$1" destination="$2"
   local info pane_id session_id source_window extra windows
   local index window_id window_name destination_window matches=0 destination_pane
-  local -a target_args
+  local pane_positions left top direction=-h destination_count
+  local -a target_args destination_panes pane_lefts pane_tops
 
   if [[ -z "$TMUX" ]]; then
     echo "wf: $command must be run inside a tmux session" >&2
@@ -398,9 +399,54 @@ join_current_pane() {
     return 1
   fi
 
-  destination_pane="$(tmux display-message -p -t "$session_id:$destination_window" '#{pane_id}')" || return 1
+  pane_positions="$(tmux list-panes -t "$session_id:$destination_window" -F $'#{pane_id}\t#{pane_left}\t#{pane_top}')" || return 1
+  while IFS=$'\t' read -r destination_pane left top; do
+    if [[ -z "$destination_pane" || "$left" != <-> || "$top" != <-> ]]; then
+      echo "wf: could not determine destination layout" >&2
+      return 1
+    fi
+    destination_panes+=("$destination_pane")
+    pane_lefts+=("$left")
+    pane_tops+=("$top")
+  done <<< "$pane_positions"
+  destination_count=${#destination_panes}
+
+  case "$destination_count" in
+    1)
+      destination_pane="$destination_panes[1]"
+      ;;
+    2)
+      if [[ "$pane_tops[1]" == "$pane_tops[2]" ]]; then
+        # Side-by-side: join below the right pane to form a triple layout.
+        direction=-v
+        if (( pane_lefts[1] > pane_lefts[2] )); then
+          destination_pane="$destination_panes[1]"
+        else
+          destination_pane="$destination_panes[2]"
+        fi
+      else
+        # Stacked: join to the right of the bottom pane.
+        if (( pane_tops[1] > pane_tops[2] )); then
+          destination_pane="$destination_panes[1]"
+        else
+          destination_pane="$destination_panes[2]"
+        fi
+      fi
+      ;;
+    3)
+      # Append the incoming pane so tiled layout places it bottom-right.
+      destination_pane="$destination_panes[-1]"
+      ;;
+    *)
+      destination_pane="$(tmux display-message -p -t "$session_id:$destination_window" '#{pane_id}')" || return 1
+      ;;
+  esac
+
   [[ -n "$destination_pane" ]] || return 1
-  tmux join-pane -h -s "$pane_id" -t "$destination_pane"
+  tmux join-pane "$direction" -s "$pane_id" -t "$destination_pane" || return 1
+  if (( destination_count == 3 )); then
+    tmux select-layout -t "$destination_window" tiled >/dev/null || return 1
+  fi
 }
 
 close_current_pane() {
