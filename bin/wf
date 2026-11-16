@@ -48,6 +48,96 @@ save_layout() {
   echo "wf: saved layout '$name' ($pane_count panes) to $layout_file"
 }
 
+# Populate the caller's layout_count, layout_geometry, and layout_commands.
+# Saved files are data: only command values are executed, and only when loading.
+read_saved_layout() {
+  local name="$1"
+  local file="${XDG_CONFIG_HOME:-$HOME/.config}/wf/layouts/$name.layout"
+  local line key value slot lines=0 version=''
+
+  if ! is_valid_session_name "$name"; then
+    echo "wf: invalid layout name '$name'" >&2
+    return 1
+  fi
+  if [[ ! -f "$file" || ! -r "$file" ]]; then
+    echo "wf: saved layout '$name' not found or unreadable" >&2
+    return 1
+  fi
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    (( lines += 1 ))
+    if (( lines <= 3 )); then
+      case "$lines:$line" in
+        1:version=*) version="${line#version=}" ;;
+        2:panes=*) layout_count="${line#panes=}" ;;
+        3:layout=*) layout_geometry="${line#layout=}" ;;
+        *) echo "wf: invalid saved layout '$name'" >&2; return 1 ;;
+      esac
+    elif [[ -n "$line" ]]; then
+      key="${line%%=*}"
+      value="${line#*=}"
+      slot="${key#command.}"
+      if [[ "$key" != command.* || "$line" != *=* || ! "$slot" =~ '^[1-9][0-9]{0,8}$' ||
+            -z "${value//[[:space:]]/}" || "$value" == *$'\r'* ]]; then
+        echo "wf: invalid command entry in layout '$name'" >&2
+        return 1
+      fi
+      layout_commands[$slot]="$value"
+    fi
+  done < "$file"
+  if [[ "$version" != 1 || ! "$layout_count" =~ '^[1-9][0-9]{0,8}$' || -z "$layout_geometry" ]] || (( lines < 3 )); then
+    echo "wf: invalid saved layout '$name'" >&2
+    return 1
+  fi
+  for slot in "${(@k)layout_commands}"; do
+    if (( slot < 2 || slot > layout_count )); then
+      echo "wf: command pane must be between 2 and $layout_count in layout '$name'; pane 1 is preserved" >&2
+      return 1
+    fi
+  done
+}
+
+set_layout_command() {
+  local name="$1" slot="$2" command="$3"
+  local file="${XDG_CONFIG_HOME:-$HOME/.config}/wf/layouts/$name.layout"
+  local layout_count='' layout_geometry='' temporary key
+  local -A layout_commands
+
+  read_saved_layout "$name" || return 1
+  if [[ ! "$slot" =~ '^[1-9][0-9]{0,8}$' ]] || (( slot < 2 || slot > layout_count )); then
+    echo "wf: command pane must be between 2 and $layout_count; pane 1 is preserved" >&2
+    return 1
+  fi
+  if [[ "$command" == --remove ]]; then
+    if (( ! ${+layout_commands[$slot]} )); then
+      echo "wf: no command set for pane $slot in layout '$name'"
+      return 0
+    fi
+    unset "layout_commands[$slot]"
+  else
+    if [[ -z "${command//[[:space:]]/}" || "$command" == *$'\n'* || "$command" == *$'\r'* ]]; then
+      echo 'wf: layout command must be nonempty and on one line' >&2
+      return 1
+    fi
+    layout_commands[$slot]="$command"
+  fi
+  temporary="$(mktemp "$file.tmp.XXXXXX")" || return 1
+  if ! {
+    printf 'version=1\npanes=%s\nlayout=%s\n' "$layout_count" "$layout_geometry"
+    for key in ${(onk)layout_commands}; do
+      print -r -- "command.$key=${layout_commands[$key]}"
+    done
+  } > "$temporary" || ! mv -f -- "$temporary" "$file"; then
+    rm -f -- "$temporary"
+    echo "wf: could not update command in layout '$name'" >&2
+    return 1
+  fi
+  if [[ "$command" == --remove ]]; then
+    echo "wf: removed command for pane $slot in layout '$name'"
+  else
+    echo "wf: set command for pane $slot in layout '$name'"
+  fi
+}
+
 # Print each newly created pane ID so callers can clean up on failure.
 add_layout_panes() {
   local window="$1" count="$2" directory="$3" empty="$4"
@@ -78,38 +168,20 @@ add_layout_panes() {
 
 load_layout() {
   local name="$1"
-  local layout_file="${XDG_CONFIG_HOME:-$HOME/.config}/wf/layouts/$name.layout"
-  local line version='' count='' layout='' lines=0
+  local layout_count='' layout_geometry='' count layout
+  local -A layout_commands
   local info original_pane window_id current_count session_id width height extra directory
-  local staging='' created='' new_pane
+  local staging='' created='' new_pane empty=no shell default_command startup slot pane_ids failed=0
+  local -a ordered_panes
   local -a target_args
 
   if [[ -z "$TMUX" ]]; then
     echo 'wf: -layout must be run inside a tmux session' >&2
     return 1
   fi
-  if ! is_valid_session_name "$name"; then
-    echo "wf: invalid layout name '$name'" >&2
-    return 1
-  fi
-  if [[ ! -f "$layout_file" || ! -r "$layout_file" ]]; then
-    echo "wf: saved layout '$name' not found or unreadable" >&2
-    return 1
-  fi
-  # Read data only; never execute saved files as shell code.
-  while IFS= read -r line || [[ -n "$line" ]]; do
-    (( lines += 1 ))
-    case "$lines:$line" in
-      1:version=*) version="${line#version=}" ;;
-      2:panes=*) count="${line#panes=}" ;;
-      3:layout=*) layout="${line#layout=}" ;;
-      *) echo "wf: invalid saved layout '$name'" >&2; return 1 ;;
-    esac
-  done < "$layout_file"
-  if [[ "$version" != 1 || ! "$count" =~ '^[1-9][0-9]{0,8}$' || -z "$layout" ]] || (( lines != 3 )); then
-    echo "wf: invalid saved layout '$name'" >&2
-    return 1
-  fi
+  read_saved_layout "$name" || return 1
+  count="$layout_count"
+  layout="$layout_geometry"
 
   [[ -n "$TMUX_PANE" ]] && target_args=(-t "$TMUX_PANE")
   info="$(tmux display-message -p "${target_args[@]}" '#{pane_id} #{window_id} #{window_panes} #{session_id} #{window_width} #{window_height}')" || return 1
@@ -142,7 +214,13 @@ load_layout() {
     [[ -z "$staging" ]] || tmux kill-window -t "$staging" >/dev/null 2>&1
   }
 
-  if ! created="$(add_layout_panes "$window_id" "$count" "$directory" no)" ||
+  if (( ${#layout_commands} > 0 )); then
+    empty=yes
+    shell="$(tmux display-message -p -t "$original_pane" '#{default-shell}')" || return 1
+    default_command="$(tmux display-message -p -t "$original_pane" '#{default-command}')" || return 1
+    [[ -n "$shell" ]] || return 1
+  fi
+  if ! created="$(add_layout_panes "$window_id" "$count" "$directory" "$empty")" ||
       ! tmux select-layout -t "$window_id" "$layout" >/dev/null; then
     # Roll back only panes created by this operation; never kill the original pane.
     for new_pane in "${(@f)created}"; do
@@ -153,6 +231,27 @@ load_layout() {
     return 1
   fi
   tmux select-pane -t "$original_pane" || return 1
+  if [[ "$empty" == yes ]]; then
+    pane_ids="$(tmux list-panes -t "$window_id" -F '#{pane_id}')" || return 1
+    ordered_panes=("${(@f)pane_ids}")
+    for (( slot = 2; slot <= count; slot++ )); do
+      new_pane="$ordered_panes[$slot]"
+      if (( ${+layout_commands[$slot]} )); then
+        # Run the configured command in a child login shell, then leave a shell.
+        # Single-quote values for the shell without interpreting their contents.
+        startup="${(qq)shell} -lc ${(qq)layout_commands[$slot]}; exec ${(qq)shell} -l"
+        tmux respawn-pane -k -t "$new_pane" -c "$directory" "$shell" -c "$startup" || failed=1
+      elif [[ -n "$default_command" ]]; then
+        tmux respawn-pane -k -t "$new_pane" -c "$directory" "$default_command" || failed=1
+      else
+        tmux respawn-pane -k -t "$new_pane" -c "$directory" "$shell" -l || failed=1
+      fi
+    done
+    if (( failed )); then
+      echo "wf: layout loaded, but could not start all pane commands" >&2
+      return 1
+    fi
+  fi
   echo "wf: loaded layout '$name' ($count panes)"
 }
 
@@ -989,6 +1088,7 @@ wf - Workspace Flow
   wf -git               Show Git branch and changes for child directories.
   wf -layouts           List saved layouts and their pane counts.
   wf -delete-layout <name> Delete a saved layout; running panes are unaffected.
+  wf -layout-cmd <name> <pane> <command|--remove> Set, replace or remove a startup command.
   wf --help, -h         Show this help.
 
 Inside a workspace:
@@ -1028,6 +1128,16 @@ main() {
 
     --help|-h)
       show_help
+      ;;
+
+    -layout-cmd)
+      if (( $# < 4 )) || { [[ "$4" == --remove ]] && (( $# != 4 )); }; then
+        echo "Usage: wf -layout-cmd <name> <pane> <command|--remove>" >&2
+        return 1
+      fi
+      local layout_name="$2" layout_slot="$3"
+      shift 3
+      set_layout_command "$layout_name" "$layout_slot" "$*"
       ;;
 
     -delete-layout)

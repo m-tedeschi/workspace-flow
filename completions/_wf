@@ -34,6 +34,7 @@ _arguments -C \
   '-save-layout[save the current pane arrangement under a new name]:layout name:' \
   '-layout[build a saved layout in a single-pane window]:saved layout:_wf_layouts' \
   '-delete-layout[delete a saved layout]:saved layout:_wf_layouts' \
+  '-layout-cmd[set, replace or remove a saved pane startup command]:saved layout:_wf_layouts:pane number (2 or greater): :command or --remove:(--remove)' \
   '-layouts[list saved layouts and pane counts]' \
   '-p[create or enter a workspace at a directory]:directory:_directories' \
   '-d[delete a tmux session]:session:_wf_sessions' \
