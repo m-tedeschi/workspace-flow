@@ -18,9 +18,23 @@ _wf_windows() {
   _describe -t windows 'destination window' windows
 }
 
+_wf_layouts() {
+  local directory="${XDG_CONFIG_HOME:-$HOME/.config}/wf/layouts"
+  local file
+  local -a layouts
+  for file in "$directory"/*.layout(N.on); do
+    layouts+=("${file:t:r}")
+  done
+  _describe -t layouts 'saved layout' layouts
+}
+
 _arguments -C \
   '(-h --help)'{-h,--help}'[display help]' \
   '-git[show git repository statuses in the current directory]' \
+  '-save-layout[save the current pane arrangement under a new name]:layout name:' \
+  '-layout[build a saved layout in a single-pane window]:saved layout:_wf_layouts' \
+  '-delete-layout[delete a saved layout]:saved layout:_wf_layouts' \
+  '-layouts[list saved layouts and pane counts]' \
   '-p[create or enter a workspace at a directory]:directory:_directories' \
   '-d[delete a tmux session]:session:_wf_sessions' \
   '-x[detach from the current tmux session]' \

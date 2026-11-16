@@ -111,6 +111,10 @@ Expected output:
 | `wf -l <window_name>` / `wf -label <window_name>` | Rename the current tmux window. |
 | `wf -nl` / `wf -nolabel` | Remove the custom window label and resume tmux's automatic naming. Requires tmux. |
 | `wf -git` | Show branch and working tree status for git repositories in the current directory. |
+| `wf -save-layout <name>` | Save the current window's pane arrangement and pane count. Requires tmux; existing names are never overwritten. |
+| `wf -layout <name>` | Load saved geometry into a window with exactly one pane, creating the remaining panes in its directory. Keeps the original program in the first slot and focuses it. Requires tmux; tab-completes saved names. |
+| `wf -layouts` | List saved layout names and pane counts. Works outside tmux. |
+| `wf -delete-layout <name>` | Delete a saved layout file without affecting running panes. Works outside tmux; tab-completes saved names. |
 | `wf -x` | Detach from the current tmux session. |
 | `wf -n [n]` | Create n windows in the invoking shell's current directory and focus the last new window. Defaults to 1; accepts whole numbers from 0 to 5. Requires tmux; 0 creates no windows. |
 | `wf -N [n]` | Create n windows in the workspace's starting directory and focus the last new window. Defaults to 1; accepts whole numbers from 0 to 5. Requires tmux; 0 creates no windows. |
@@ -151,6 +155,8 @@ Joining adapts to the destination's existing panes, regardless of which pane was
 - Two stacked panes: split the bottom pane left/right, with the incoming pane at bottom right.
 - Three panes: arrange all four into an equal 2×2 grid, with the incoming pane at bottom right.
 - Four or more panes: split the active destination pane left/right, placing the incoming pane on its right.
+
+Saved layouts live in `~/.config/wf/layouts/<name>.layout` (or `$XDG_CONFIG_HOME/wf/layouts/` when configured). Names use letters, numbers, `_`, and `-`, with at least one letter or number. Each file contains a format version, pane count, and tmux’s raw `window_layout` string. Saving a zoomed window records its underlying split layout without changing zoom, pane sizes, or running programs. Only geometry is saved, not programs or directories. `wf -layout <name>` requires exactly one pane, validates the geometry in a temporary detached empty window, then creates fresh shells in the original pane's directory. It preserves that original pane and running program, placing it in the first saved slot. Tmux adapts saved dimensions to the current window size. Failed creation removes only the newly created panes. Use `wf -delete-layout <name>` to remove a saved preset; this does not change any running window.
 
 ## Future Improvements
 

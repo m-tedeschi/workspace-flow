@@ -3,6 +3,202 @@
 # wf - Workspace Flow
 # A lightweight tmux workspace manager
 
+save_layout() {
+  local name="$1"
+  local layout_dir="${XDG_CONFIG_HOME:-$HOME/.config}/wf/layouts"
+  local layout_file="$layout_dir/$name.layout"
+  local info pane_count layout extra
+  local -a target_args
+
+  if [[ -z "$TMUX" ]]; then
+    echo "wf: -save-layout must be run inside a tmux session" >&2
+    return 1
+  fi
+  if ! is_valid_session_name "$name"; then
+    echo "wf: invalid layout name '$name'; use letters, numbers, '_' or '-', with at least one letter or number" >&2
+    return 1
+  fi
+  if [[ -e "$layout_file" || -L "$layout_file" ]]; then
+    echo "wf: layout '$name' already exists; choose a different name" >&2
+    return 1
+  fi
+
+  if [[ -n "$TMUX_PANE" ]]; then
+    target_args=(-t "$TMUX_PANE")
+  fi
+  if ! info="$(tmux display-message -p "${target_args[@]}" $'#{window_panes}\t#{window_layout}')"; then
+    echo "wf: could not read current window layout" >&2
+    return 1
+  fi
+  IFS=$'\t' read -r pane_count layout extra <<< "$info"
+  if [[ "$pane_count" != <-> || -z "$layout" || -n "$extra" ]] || (( pane_count < 1 )); then
+    echo "wf: could not read current window layout" >&2
+    return 1
+  fi
+
+  if ! mkdir -p "$layout_dir"; then
+    echo "wf: could not create layout directory '$layout_dir'" >&2
+    return 1
+  fi
+  if ! (setopt noclobber; printf 'version=1\npanes=%s\nlayout=%s\n' "$pane_count" "$layout" > "$layout_file"); then
+    echo "wf: could not save layout '$name'" >&2
+    return 1
+  fi
+
+  echo "wf: saved layout '$name' ($pane_count panes) to $layout_file"
+}
+
+# Print each newly created pane ID so callers can clean up on failure.
+add_layout_panes() {
+  local window="$1" count="$2" directory="$3" empty="$4"
+  local index panes candidate width height extra area largest target direction new_pane
+  local -a shell_args
+  [[ "$empty" == yes ]] && shell_args=('')
+
+  for (( index = 1; index < count; index++ )); do
+    panes="$(tmux list-panes -t "$window" -F '#{pane_id} #{pane_width} #{pane_height}')" || return 1
+    largest=0
+    target=''
+    while read -r candidate width height extra; do
+      [[ "$width" == <-> && "$height" == <-> && -z "$extra" ]] || return 1
+      area=$(( width * height ))
+      if (( area > largest )); then
+        largest=$area
+        target="$candidate"
+        if (( width > height )); then direction=-h; else direction=-v; fi
+      fi
+    done <<< "$panes"
+    [[ -n "$target" ]] || return 1
+    new_pane="$(tmux split-window "$direction" -d -P -F '#{pane_id}' -t "$target" -c "$directory" "${shell_args[@]}")" || return 1
+    print -r -- "$new_pane"
+    tmux select-layout -t "$window" tiled >/dev/null || return 1
+  done
+  return 0
+}
+
+load_layout() {
+  local name="$1"
+  local layout_file="${XDG_CONFIG_HOME:-$HOME/.config}/wf/layouts/$name.layout"
+  local line version='' count='' layout='' lines=0
+  local info original_pane window_id current_count session_id width height extra directory
+  local staging='' created='' new_pane
+  local -a target_args
+
+  if [[ -z "$TMUX" ]]; then
+    echo 'wf: -layout must be run inside a tmux session' >&2
+    return 1
+  fi
+  if ! is_valid_session_name "$name"; then
+    echo "wf: invalid layout name '$name'" >&2
+    return 1
+  fi
+  if [[ ! -f "$layout_file" || ! -r "$layout_file" ]]; then
+    echo "wf: saved layout '$name' not found or unreadable" >&2
+    return 1
+  fi
+  # Read data only; never execute saved files as shell code.
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    (( lines += 1 ))
+    case "$lines:$line" in
+      1:version=*) version="${line#version=}" ;;
+      2:panes=*) count="${line#panes=}" ;;
+      3:layout=*) layout="${line#layout=}" ;;
+      *) echo "wf: invalid saved layout '$name'" >&2; return 1 ;;
+    esac
+  done < "$layout_file"
+  if [[ "$version" != 1 || ! "$count" =~ '^[1-9][0-9]{0,8}$' || -z "$layout" ]] || (( lines != 3 )); then
+    echo "wf: invalid saved layout '$name'" >&2
+    return 1
+  fi
+
+  [[ -n "$TMUX_PANE" ]] && target_args=(-t "$TMUX_PANE")
+  info="$(tmux display-message -p "${target_args[@]}" '#{pane_id} #{window_id} #{window_panes} #{session_id} #{window_width} #{window_height}')" || return 1
+  read -r original_pane window_id current_count session_id width height extra <<< "$info"
+  if [[ -z "$original_pane" || -z "$window_id" || -z "$session_id" || "$current_count" != <-> || "$width" != <-> || "$height" != <-> || -n "$extra" ]]; then
+    echo 'wf: could not determine current window' >&2
+    return 1
+  fi
+  if [[ "$current_count" != 1 ]]; then
+    echo 'wf: -layout requires exactly 1 pane; try again with 1 pane in the current window' >&2
+    return 1
+  fi
+  if (( count > width * height )); then
+    echo "wf: layout '$name' has too many panes for this window" >&2
+    return 1
+  fi
+  directory="$(tmux display-message -p -t "$original_pane" '#{pane_current_path}')" || return 1
+
+  # Let tmux validate the geometry and available space in a detached, empty window.
+  # No shells are launched there and the user's original window is untouched.
+  {
+    staging="$(tmux new-window -d -P -F '#{window_id}' -t "$session_id:" -n wf-layout-check -c "$directory" '')" || return 1
+    tmux resize-window -t "$staging" -x "$width" -y "$height" || return 1
+    if ! add_layout_panes "$staging" "$count" "$directory" yes >/dev/null ||
+        ! tmux select-layout -t "$staging" "$layout" >/dev/null; then
+      echo "wf: layout '$name' is invalid or does not fit this window" >&2
+      return 1
+    fi
+  } always {
+    [[ -z "$staging" ]] || tmux kill-window -t "$staging" >/dev/null 2>&1
+  }
+
+  if ! created="$(add_layout_panes "$window_id" "$count" "$directory" no)" ||
+      ! tmux select-layout -t "$window_id" "$layout" >/dev/null; then
+    # Roll back only panes created by this operation; never kill the original pane.
+    for new_pane in "${(@f)created}"; do
+      [[ -z "$new_pane" ]] || tmux kill-pane -t "$new_pane" >/dev/null 2>&1
+    done
+    tmux select-pane -t "$original_pane" >/dev/null 2>&1
+    echo "wf: could not load layout '$name'; kept the original pane" >&2
+    return 1
+  fi
+  tmux select-pane -t "$original_pane" || return 1
+  echo "wf: loaded layout '$name' ($count panes)"
+}
+
+delete_layout() {
+  local name="$1"
+  local layout_file="${XDG_CONFIG_HOME:-$HOME/.config}/wf/layouts/$name.layout"
+
+  if ! is_valid_session_name "$name"; then
+    echo "wf: invalid layout name '$name'" >&2
+    return 1
+  fi
+  if [[ ! -f "$layout_file" ]]; then
+    echo "wf: saved layout '$name' not found" >&2
+    return 1
+  fi
+  if ! rm -- "$layout_file"; then
+    echo "wf: could not delete layout '$name'" >&2
+    return 1
+  fi
+  echo "wf: deleted layout '$name'"
+}
+
+list_layouts() {
+  local layout_dir="${XDG_CONFIG_HOME:-$HOME/.config}/wf/layouts"
+  local file line pane_count found=0
+
+  for file in "$layout_dir"/*.layout(N.on); do
+    if (( found == 0 )); then
+      printf '%-24s %s\n' 'LAYOUT' 'PANES'
+      found=1
+    fi
+    pane_count='?'
+    while IFS= read -r line; do
+      if [[ "$line" == panes=* && "${line#panes=}" == <-> ]]; then
+        pane_count="${line#panes=}"
+        break
+      fi
+    done < "$file"
+    printf '%-24s %s\n' "${file:t:r}" "$pane_count"
+  done
+
+  if (( found == 0 )); then
+    echo 'wf: no saved layouts'
+  fi
+}
+
 session_exists() {
   tmux has-session -t "=$1" 2>/dev/null
 }
@@ -791,9 +987,13 @@ wf - Workspace Flow
   wf -p <directory>     Create or enter a workspace at a path; reject name conflicts.
   wf -d [name]          Confirm and delete a workspace; defaults to current workspace.
   wf -git               Show Git branch and changes for child directories.
+  wf -layouts           List saved layouts and their pane counts.
+  wf -delete-layout <name> Delete a saved layout; running panes are unaffected.
   wf --help, -h         Show this help.
 
 Inside a workspace:
+  wf -save-layout <name> Save this window's pane arrangement without overwriting a name.
+  wf -layout <name> Build a saved layout around this pane; requires exactly 1 pane.
   wf -x                 Detach from the workspace.
   wf -n [0-5]           New window(s) here; defaults to 1.
   wf -N [0-5]           New window(s) at the workspace directory; defaults to 1.
@@ -828,6 +1028,42 @@ main() {
 
     --help|-h)
       show_help
+      ;;
+
+    -delete-layout)
+      if (( $# != 2 )); then
+        echo "Usage: wf -delete-layout <name>" >&2
+        return 1
+      fi
+
+      delete_layout "$2"
+      ;;
+
+    -layouts)
+      if (( $# != 1 )); then
+        echo "Usage: wf -layouts" >&2
+        return 1
+      fi
+
+      list_layouts
+      ;;
+
+    -layout)
+      if (( $# != 2 )); then
+        echo "Usage: wf -layout <name>" >&2
+        return 1
+      fi
+
+      load_layout "$2"
+      ;;
+
+    -save-layout)
+      if (( $# != 2 )); then
+        echo "Usage: wf -save-layout <name>" >&2
+        return 1
+      fi
+
+      save_layout "$2"
       ;;
 
     -p)
